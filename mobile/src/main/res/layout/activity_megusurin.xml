@@ -2,7 +2,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#000"
     tools:context=".MegusurinActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/input_command"
+        android:textColor="#FFF"
+        android:layout_gravity="center"
+        android:textSize="32sp"/>
 
     <FrameLayout
         android:id="@+id/content_holder"

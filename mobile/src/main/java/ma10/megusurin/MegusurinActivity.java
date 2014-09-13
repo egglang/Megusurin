@@ -22,12 +22,13 @@ import com.google.android.gms.wearable.Wearable;
 
 public class MegusurinActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
-        NodeApi.NodeListener {
+        NodeApi.NodeListener, MagicViewFragment.OnMagicEffectListener {
 
 
     private static final String TAG = "Megusurin";
     private static final String PATH_FIRE = "/fire";
     private static final String PATH_THUNDER = "/thunder";
+    private static final String MAGIC_FRAGMENT_TAG = "MAGIC_VIEW";
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -123,11 +124,11 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
 
-        Fragment oldFragment = fm.findFragmentByTag("MAGIC_VIEW");
+        Fragment oldFragment = fm.findFragmentByTag(MAGIC_FRAGMENT_TAG);
         if (oldFragment != null) {
             ft.remove(oldFragment);
         }
-        ft.add(R.id.content_holder, f, "MAGIC_VIEW");
+        ft.add(R.id.content_holder, f, MAGIC_FRAGMENT_TAG);
         ft.commit();
     }
 
@@ -144,5 +145,17 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     @Override
     public void onPeerDisconnected(Node node) {
         Log.d(TAG, "Node Disconnected:" + node.getId());
+    }
+
+    @Override
+    public void onFinished() {
+        FragmentManager fm = getFragmentManager();
+        FragmentTransaction ft = fm.beginTransaction();
+
+        Fragment oldFragment = fm.findFragmentByTag(MAGIC_FRAGMENT_TAG);
+        if (oldFragment != null) {
+            ft.remove(oldFragment);
+        }
+        ft.commit();
     }
 }
