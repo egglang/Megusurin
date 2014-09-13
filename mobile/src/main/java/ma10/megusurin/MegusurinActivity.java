@@ -5,8 +5,8 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.app.Fragment;
 
@@ -32,6 +32,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
     private GoogleApiClient mGoogleApiClient;
 
+    private TextView mTextInputCommand;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,26 +43,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
-    }
 
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.megusurin, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        mTextInputCommand = (TextView) findViewById(R.id.main_text_inputcommand);
     }
 
     @Override
@@ -103,7 +87,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
             @Override
             public void run() {
                 String path = event.getPath();
-                int magicType = 0;
+                int magicType = -1;
                 if (PATH_FIRE.equals(path)) {
                     Toast.makeText(getApplicationContext(), "Fire event received.", Toast.LENGTH_SHORT).show();
                     magicType = MagicViewFragment.MAGIC_TYPE_FIRE;
@@ -114,8 +98,11 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
                     Log.d(TAG, "Unknown path: " + path);
                 }
 
-                Fragment f = MagicViewFragment.newInstance(magicType);
-                showTargetFragment(f);
+                if (magicType != -1) {
+                    mTextInputCommand.setVisibility(View.INVISIBLE);
+                    Fragment f = MagicViewFragment.newInstance(magicType);
+                    showTargetFragment(f);
+                }
             }
         });
     }
@@ -149,6 +136,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
     @Override
     public void onFinished() {
+        mTextInputCommand.setVisibility(View.VISIBLE);
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
 

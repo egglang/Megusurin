@@ -239,11 +239,11 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
                 if (TextUtils.isEmpty(result)) {
                     continue;
                 }
-                if (result.contains("炎") || result.contains("燃") || result.contains("ほのお")) {
+                if (result.contains("炎") || result.contains("燃") || result.contains("ほのお") || result.contains("メラ")) {
                     doFire();
                     return;
                 }
-                if (result.contains("雷") || result.contains("神の怒") || result.contains("かみなり")) {
+                if (result.contains("雷") || result.contains("神の怒") || result.contains("かみなり") || result.contains("デイン")) {
                     doThunder();
                     return;
                 }

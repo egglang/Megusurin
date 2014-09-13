@@ -6,6 +6,7 @@
     tools:context=".MegusurinActivity">
 
     <TextView
+        android:id="@+id/main_text_inputcommand"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/input_command"

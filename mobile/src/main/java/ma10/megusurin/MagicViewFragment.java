@@ -131,9 +131,21 @@ public class MagicViewFragment extends Fragment {
 
     private final Runnable mMagicEffector = new Runnable() {
         public void run() {
+            int delayTime = 0;
+            switch (mMagicType) {
+                case MAGIC_TYPE_FIRE:
+                    delayTime = 250;
+                    break;
+
+                case MAGIC_TYPE_THUNDER:
+                    delayTime = 100;
+                    break;
+            }
+
+
             long now = System.currentTimeMillis();
             if ((mStartTime + MAGIC_EFFECT_TIME) > now) {
-                mHandler.postDelayed(mMagicEffector, 100);
+                mHandler.postDelayed(mMagicEffector, delayTime);
             } else {
                 mHandler.postDelayed(new Runnable() {
                     @Override
@@ -142,7 +154,7 @@ public class MagicViewFragment extends Fragment {
                             mListener.onFinished();
                         }
                     }
-                }, 250);
+                }, 500);
             }
 
             mHandler.post(new Runnable() {
@@ -163,7 +175,23 @@ public class MagicViewFragment extends Fragment {
     };
 
     private void showEffectFire() {
+        Random rand = new Random();
+        int id = rand.nextInt(2);
+        mMagicImage.setX(0);
+        switch (id) {
+            case 0:
+                mMagicImage.setImageResource(R.drawable.fire01);
+                break;
+            case 1:
+                mMagicImage.setImageResource(R.drawable.fire02);
+                break;
+            case 2:
+                mMagicImage.setImageResource(R.drawable.fire03);
+                break;
+        }
 
+        int moveX = rand.nextInt(1000) - 500;
+        mMagicImage.setX(moveX);
     }
 
     private void showEffectThunder() {
