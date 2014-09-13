@@ -80,11 +80,18 @@ public class MagicViewFragment extends Fragment {
         return v;
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        mHandler.removeCallbacks(mMagicEffector);
+    }
+
     private final Runnable mMagicEffector = new Runnable() {
         public void run() {
             long now = System.currentTimeMillis();
             if ((mStartTime + MAGIC_EFFECT_TIME) > now) {
-                mMagicImage.getHandler().postDelayed(mMagicEffector, 100);
+                mHandler.postDelayed(mMagicEffector, 100);
             }
 
             mHandler.post(new Runnable() {
