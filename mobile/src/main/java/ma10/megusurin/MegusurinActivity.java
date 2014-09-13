@@ -1,11 +1,14 @@
 package ma10.megusurin;
 
 import android.app.Activity;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
+import android.app.Fragment;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -99,16 +102,36 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
             @Override
             public void run() {
                 String path = event.getPath();
+                int magicType = 0;
                 if (PATH_FIRE.equals(path)) {
                     Toast.makeText(getApplicationContext(), "Fire event received.", Toast.LENGTH_SHORT).show();
+                    magicType = MagicViewFragment.MAGIC_TYPE_FIRE;
                 } else if (PATH_THUNDER.equals(path)) {
                     Toast.makeText(getApplicationContext(), "Thunder event received", Toast.LENGTH_SHORT).show();
+                    magicType = MagicViewFragment.MAGIC_TYPE_THUNDER;
                 } else {
                     Log.d(TAG, "Unknown path: " + path);
                 }
+
+                Fragment f = MagicViewFragment.newInstance(magicType);
+                showTargetFragment(f);
             }
         });
     }
+
+    private void showTargetFragment(Fragment f) {
+        FragmentManager fm = getFragmentManager();
+        FragmentTransaction ft = fm.beginTransaction();
+
+        Fragment oldFragment = fm.findFragmentByTag("MAGIC_VIEW");
+        if (oldFragment != null) {
+            ft.remove(oldFragment);
+        }
+        ft.add(R.id.content_holder, f, "MAGIC_VIEW");
+        ft.commit();
+    }
+
+
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
         Log.d(TAG, "onDataChanged: " + dataEvents);
