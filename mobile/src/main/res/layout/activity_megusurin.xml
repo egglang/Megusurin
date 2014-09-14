@@ -1,9 +1,23 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_back"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000"
     tools:context=".MegusurinActivity">
+
+    <FrameLayout
+        android:id="@+id/camera_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ToggleButton
+        android:id="@+id/preview_toggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textOff="@string/preview_off"
+        android:textOn="@string/preview_on"
+        android:layout_gravity="bottom|center_horizontal"/>
 
     <TextView
         android:id="@+id/main_text_inputcommand"
@@ -17,6 +31,7 @@
     <FrameLayout
         android:id="@+id/content_holder"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"/>
 
 </FrameLayout>

@@ -11,7 +11,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.os.Handler;
 
-import java.io.IOException;
 import java.util.Random;
 
 
@@ -35,15 +34,21 @@ public class MagicViewFragment extends Fragment {
     /** Magic Type */
     private static final String ARG_MAGIC_TYPE = "magic_type";
 
+    /** Preview Mode */
+    private static final String ARG_PREVIEW_MOVE = "preview_mode";
+
     private int mMagicType;
+
+    private boolean mPreviewMode;
 
     private Handler mHandler;
 
-    public static MagicViewFragment newInstance(int magicType) {
+    public static MagicViewFragment newInstance(int magicType, boolean previewMode) {
         MagicViewFragment fragment = new MagicViewFragment();
 
         Bundle args = new Bundle();
         args.putInt(ARG_MAGIC_TYPE, magicType);
+        args.putBoolean(ARG_PREVIEW_MOVE, previewMode);
         fragment.setArguments(args);
 
         return fragment;
@@ -73,6 +78,7 @@ public class MagicViewFragment extends Fragment {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
             mMagicType = getArguments().getInt(ARG_MAGIC_TYPE);
+            mPreviewMode = getArguments().getBoolean(ARG_PREVIEW_MOVE);
         }
 
         mHandler = new Handler();
@@ -178,17 +184,22 @@ public class MagicViewFragment extends Fragment {
         Random rand = new Random();
         int id = rand.nextInt(2);
         mMagicImage.setX(0);
+        int resId = 0;
         switch (id) {
             case 0:
-                mMagicImage.setImageResource(R.drawable.fire01);
+                resId = mPreviewMode ?
+                        R.drawable.fire_trans_01 : R.drawable.fire01;
                 break;
             case 1:
-                mMagicImage.setImageResource(R.drawable.fire02);
+                resId = mPreviewMode ?
+                        R.drawable.fire_trans_02 : R.drawable.fire02;
                 break;
             case 2:
-                mMagicImage.setImageResource(R.drawable.fire03);
+                resId = mPreviewMode ?
+                        R.drawable.fire_trans_03 : R.drawable.fire03;
                 break;
         }
+        mMagicImage.setImageResource(resId);
 
         int moveX = rand.nextInt(1000) - 500;
         mMagicImage.setX(moveX);
@@ -197,17 +208,22 @@ public class MagicViewFragment extends Fragment {
     private void showEffectThunder() {
         Random rand = new Random();
         int id = rand.nextInt(2);
+        int resId = 0;
         switch (id) {
             case 0:
-                mMagicImage.setImageResource(R.drawable.thunder01);
+                resId = mPreviewMode ?
+                        R.drawable.thunder_trans_01 : R.drawable.thunder01;
                 break;
             case 1:
-                mMagicImage.setImageResource(R.drawable.thunder02);
+                resId = mPreviewMode ?
+                        R.drawable.thunder_trans_02 : R.drawable.thunder02;
                 break;
             case 2:
-                mMagicImage.setImageResource(R.drawable.thunder03);
+                resId = mPreviewMode ?
+                        R.drawable.thunder_trans_03 : R.drawable.thunder03;
                 break;
         }
+        mMagicImage.setImageResource(resId);
 
         if (!mMediaPlayer.isPlaying()) {
             mMediaPlayer.start();

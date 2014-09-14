@@ -3,12 +3,16 @@ package ma10.megusurin;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.app.Fragment;
+import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -28,23 +32,37 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private static final String TAG = "Megusurin";
     private static final String PATH_FIRE = "/fire";
     private static final String PATH_THUNDER = "/thunder";
+
     private static final String MAGIC_FRAGMENT_TAG = "MAGIC_VIEW";
+    private static final String CAMERA_FRAGMENT_TAG = "CAMERA_VIEW";
 
     private GoogleApiClient mGoogleApiClient;
 
     private TextView mTextInputCommand;
 
+    private ToggleButton mTogglePreview;
+
+    private boolean mPreviewMode;
+
+    private ViewGroup mBackGround;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_megusurin);
+
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
 
+        mBackGround = (ViewGroup) findViewById(R.id.main_back);
+
         mTextInputCommand = (TextView) findViewById(R.id.main_text_inputcommand);
+
+        mTogglePreview = (ToggleButton) findViewById(R.id.preview_toggle);
+        mTogglePreview.setOnCheckedChangeListener(mOnPreviewToggleChangedListener);
     }
 
     @Override
@@ -99,26 +117,16 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
                 }
 
                 if (magicType != -1) {
+                    removeTargetFragment(MAGIC_FRAGMENT_TAG);
+                    Fragment f = MagicViewFragment.newInstance(magicType, mPreviewMode);
+                    showTargetFragment(f, R.id.content_holder, MAGIC_FRAGMENT_TAG);
+
                     mTextInputCommand.setVisibility(View.INVISIBLE);
-                    Fragment f = MagicViewFragment.newInstance(magicType);
-                    showTargetFragment(f);
+                    mTogglePreview.setVisibility(View.INVISIBLE);
                 }
             }
         });
     }
-
-    private void showTargetFragment(Fragment f) {
-        FragmentManager fm = getFragmentManager();
-        FragmentTransaction ft = fm.beginTransaction();
-
-        Fragment oldFragment = fm.findFragmentByTag(MAGIC_FRAGMENT_TAG);
-        if (oldFragment != null) {
-            ft.remove(oldFragment);
-        }
-        ft.add(R.id.content_holder, f, MAGIC_FRAGMENT_TAG);
-        ft.commit();
-    }
-
 
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
@@ -137,10 +145,38 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     @Override
     public void onFinished() {
         mTextInputCommand.setVisibility(View.VISIBLE);
+        mTogglePreview.setVisibility(View.VISIBLE);
+        removeTargetFragment(MAGIC_FRAGMENT_TAG);
+    }
+
+    private CompoundButton.OnCheckedChangeListener mOnPreviewToggleChangedListener
+            = new CompoundButton.OnCheckedChangeListener() {
+
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            mPreviewMode = isChecked;
+            if (mPreviewMode) {
+                mBackGround.setBackgroundColor(Color.TRANSPARENT);
+                showTargetFragment(new CameraViewFragment(), R.id.camera_view, CAMERA_FRAGMENT_TAG);
+            } else {
+                mBackGround.setBackgroundColor(Color.BLACK);
+                removeTargetFragment(CAMERA_FRAGMENT_TAG);
+            }
+        }
+    };
+
+    private void showTargetFragment(Fragment f, int holderId, String tag) {
+        FragmentManager fm = getFragmentManager();
+        FragmentTransaction ft = fm.beginTransaction();
+        ft.add(holderId, f, tag);
+        ft.commit();
+    }
+
+    private void removeTargetFragment(String tag) {
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
 
-        Fragment oldFragment = fm.findFragmentByTag(MAGIC_FRAGMENT_TAG);
+        Fragment oldFragment = fm.findFragmentByTag(tag);
         if (oldFragment != null) {
             ft.remove(oldFragment);
         }
