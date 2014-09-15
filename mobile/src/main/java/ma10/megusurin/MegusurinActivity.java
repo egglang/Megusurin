@@ -31,7 +31,7 @@ import java.util.HashSet;
 
 public class MegusurinActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
-        NodeApi.NodeListener, MagicViewFragment.OnMagicEffectListener {
+        NodeApi.NodeListener, MagicViewFragment.OnMagicEffectListener, EnemyViewFragment.OnEnemyEventListener {
 
 
     private static final String TAG = "Megusurin";
@@ -42,6 +42,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
     private static final String MAGIC_FRAGMENT_TAG = "MAGIC_VIEW";
     private static final String CAMERA_FRAGMENT_TAG = "CAMERA_VIEW";
+    private static final String ENEMY_FRAGMENT_TAG = "ENEMY_VIEW";
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -52,6 +53,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private boolean mPreviewMode;
 
     private ViewGroup mBackGround;
+
+    private EnemyViewFragment mEnemyView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +73,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
         mTogglePreview = (ToggleButton) findViewById(R.id.preview_toggle);
         mTogglePreview.setOnCheckedChangeListener(mOnPreviewToggleChangedListener);
+
+        showEnemyView();
     }
 
     @Override
@@ -148,10 +153,17 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     }
 
     @Override
-    public void onFinished() {
+    public void onFinishedMagic() {
         mTextInputCommand.setVisibility(View.VISIBLE);
         mTogglePreview.setVisibility(View.VISIBLE);
         removeTargetFragment(MAGIC_FRAGMENT_TAG);
+
+        mEnemyView.onEnemyDamaged();
+    }
+
+    private void showEnemyView() {
+        mEnemyView = EnemyViewFragment.newInstance(0, true);
+        showTargetFragment(mEnemyView, R.id.enemy_view_holder, ENEMY_FRAGMENT_TAG);
     }
 
     private CompoundButton.OnCheckedChangeListener mOnPreviewToggleChangedListener
@@ -234,6 +246,21 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         }
 
         return results;
+    }
+
+    @Override
+    public void onEnemyDied() {
+
+    }
+
+    @Override
+    public void onEnemyDamaged() {
+
+    }
+
+    @Override
+    public void onEnemyAttacked() {
+
     }
 
     private class Task extends AsyncTask<Void, Void, Void> {

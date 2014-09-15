@@ -29,6 +29,12 @@
         android:textSize="32sp"/>
 
     <FrameLayout
+        android:id="@+id/enemy_view_holder"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/transparent"/>
+
+    <FrameLayout
         android:id="@+id/content_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

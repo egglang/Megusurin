@@ -20,7 +20,7 @@ import java.util.Random;
 public class MagicViewFragment extends Fragment {
 
     public interface OnMagicEffectListener {
-        void onFinished();
+        void onFinishedMagic();
     }
 
     private OnMagicEffectListener mListener;
@@ -157,7 +157,7 @@ public class MagicViewFragment extends Fragment {
                     @Override
                     public void run() {
                         if (mListener != null) {
-                            mListener.onFinished();
+                            mListener.onFinishedMagic();
                         }
                     }
                 }, 500);
