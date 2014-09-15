@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +17,7 @@ import android.widget.ToggleButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.MessageApi;
@@ -23,6 +25,9 @@ import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
+
+import java.util.Collection;
+import java.util.HashSet;
 
 public class MegusurinActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
@@ -32,6 +37,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private static final String TAG = "Megusurin";
     private static final String PATH_FIRE = "/fire";
     private static final String PATH_THUNDER = "/thunder";
+    private static final String PATH_START_APP = "/start_app";
+    private static final String PATH_STOP_APP = "/stop_app";
 
     private static final String MAGIC_FRAGMENT_TAG = "MAGIC_VIEW";
     private static final String CAMERA_FRAGMENT_TAG = "CAMERA_VIEW";
@@ -74,18 +81,16 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     @Override
     protected void onPause() {
         super.onPause();
-        Wearable.DataApi.removeListener(mGoogleApiClient, this);
-        Wearable.MessageApi.removeListener(mGoogleApiClient, this);
-        Wearable.NodeApi.removeListener(mGoogleApiClient, this);
-        mGoogleApiClient.disconnect();
+
+        stopWearApp();
     }
 
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.d(TAG, "onConnected(): Successfully connected to Google API client");
-        Wearable.DataApi.addListener(mGoogleApiClient, this);
-        Wearable.MessageApi.addListener(mGoogleApiClient, this);
-        Wearable.NodeApi.addListener(mGoogleApiClient, this);
+
+        addWearListener();
+        startWearApp();
     }
 
     @Override
@@ -182,4 +187,79 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         }
         ft.commit();
     }
+
+    private void addWearListener() {
+        Wearable.DataApi.addListener(mGoogleApiClient, this);
+        Wearable.MessageApi.addListener(mGoogleApiClient, this);
+        Wearable.NodeApi.addListener(mGoogleApiClient, this);
+    }
+
+    private void removeWearListener() {
+        Wearable.DataApi.removeListener(mGoogleApiClient, this);
+        Wearable.MessageApi.removeListener(mGoogleApiClient, this);
+        Wearable.NodeApi.removeListener(mGoogleApiClient, this);
+        mGoogleApiClient.disconnect();
+    }
+
+    private void startWearApp() {
+        new Task(PATH_START_APP).execute();
+    }
+
+    private void stopWearApp() {
+        new Task(PATH_STOP_APP).execute();
+    }
+
+    private void sendMessage(String node, String path) {
+        Wearable.MessageApi.sendMessage(
+                mGoogleApiClient, node, path, new byte[0]).setResultCallback(
+                new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                        if (!sendMessageResult.getStatus().isSuccess()) {
+                            Log.e(TAG, "Failed to send message with status code: "
+                                    + sendMessageResult.getStatus().getStatusCode());
+                        }
+                    }
+                }
+        );
+    }
+
+    private Collection<String> getNodes() {
+        HashSet<String> results = new HashSet<String>();
+        NodeApi.GetConnectedNodesResult nodes =
+                Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
+
+        for (Node node : nodes.getNodes()) {
+            results.add(node.getId());
+        }
+
+        return results;
+    }
+
+    private class Task extends AsyncTask<Void, Void, Void> {
+
+        private final String path;
+        private Task(String path) {
+            this.path = path;
+        }
+        @Override
+        protected Void doInBackground(Void... args) {
+            Collection<String> nodes = getNodes();
+            for (String node : nodes) {
+                sendMessage(node, path);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Toast.makeText(getApplicationContext(), "Generating RPC:" + path + " is called.", Toast.LENGTH_SHORT).show();
+
+            if (path.equals(PATH_STOP_APP)) {
+                removeWearListener();
+            }
+        }
+    }
+
 }

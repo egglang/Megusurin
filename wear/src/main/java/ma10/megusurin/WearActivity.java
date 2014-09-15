@@ -10,7 +10,6 @@ import android.support.wearable.view.WearableListView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,6 +39,7 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
     private static final String TAG = "Megusurin";
     private static final String PATH_FIRE = "/fire";
     private static final String PATH_THUNDER = "/thunder";
+    private static final String PATH_STOP_APP = "/stop_app";
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -91,9 +91,13 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
     }
 
     @Override
-    public void onMessageReceived(MessageEvent event) {
+    public void onMessageReceived(final MessageEvent event) {
         Log.d(TAG, "onMessageReceived: " + event);
-        generateEvent("Message", event.toString());
+
+        String path = event.getPath();
+        if (path.equals(PATH_STOP_APP)) {
+            this.finish();
+        }
     }
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
