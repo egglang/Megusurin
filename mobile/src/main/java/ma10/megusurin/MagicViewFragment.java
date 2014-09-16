@@ -20,6 +20,7 @@ import java.util.Random;
 public class MagicViewFragment extends Fragment {
 
     public interface OnMagicEffectListener {
+        void onStartMagic(final String magic);
         void onFinishedMagic();
     }
 
@@ -90,21 +91,22 @@ public class MagicViewFragment extends Fragment {
 
     private MediaPlayer mMediaPlayer;
 
+    private String mMagicText;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_magic_view, container, false);
 
-        TextView magicText = (TextView) v.findViewById(R.id.magic_view_text);
         int soundId = 0;
         switch (mMagicType) {
             case MAGIC_TYPE_FIRE:
-                magicText.setText("闇の炎に抱かれて消えろ");
+                mMagicText = "闇の炎に抱かれて消えろ";
                 soundId = R.raw.fire;
                 break;
 
             case MAGIC_TYPE_THUNDER:
-                magicText.setText("神の怒りが地上に降り注ぐ");
+                mMagicText = "神の怒りが地上に降り注ぐ";
                 soundId = R.raw.thunder;
                 break;
         }
@@ -122,6 +124,15 @@ public class MagicViewFragment extends Fragment {
         });
 
         return v;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        if (mListener != null) {
+            mListener.onStartMagic(mMagicText);
+        }
     }
 
     @Override
@@ -182,7 +193,7 @@ public class MagicViewFragment extends Fragment {
 
     private void showEffectFire() {
         Random rand = new Random();
-        int id = rand.nextInt(2);
+        int id = rand.nextInt(3);
         mMagicImage.setX(0);
         int resId = 0;
         switch (id) {
@@ -207,7 +218,7 @@ public class MagicViewFragment extends Fragment {
 
     private void showEffectThunder() {
         Random rand = new Random();
-        int id = rand.nextInt(2);
+        int id = rand.nextInt(3);
         int resId = 0;
         switch (id) {
             case 0:

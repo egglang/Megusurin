@@ -10,8 +10,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
-import android.widget.TextView;
-import android.widget.Toast;
 import android.app.Fragment;
 import android.widget.ToggleButton;
 
@@ -31,7 +29,8 @@ import java.util.HashSet;
 
 public class MegusurinActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
-        NodeApi.NodeListener, MagicViewFragment.OnMagicEffectListener, EnemyViewFragment.OnEnemyEventListener {
+        NodeApi.NodeListener, MagicViewFragment.OnMagicEffectListener,
+        EnemyViewFragment.OnEnemyEventListener, MessageViewFragment.OnMessageListener {
 
 
     private static final String TAG = "Megusurin";
@@ -43,10 +42,9 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private static final String MAGIC_FRAGMENT_TAG = "MAGIC_VIEW";
     private static final String CAMERA_FRAGMENT_TAG = "CAMERA_VIEW";
     private static final String ENEMY_FRAGMENT_TAG = "ENEMY_VIEW";
+    private static final String MESSAGE_FRAGMENT_TAG = "MESSAGE_VIEW";
 
     private GoogleApiClient mGoogleApiClient;
-
-    private TextView mTextInputCommand;
 
     private ToggleButton mTogglePreview;
 
@@ -55,6 +53,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private ViewGroup mBackGround;
 
     private EnemyViewFragment mEnemyView;
+
+    private MessageViewFragment mMessageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,11 +69,10 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
         mBackGround = (ViewGroup) findViewById(R.id.main_back);
 
-        mTextInputCommand = (TextView) findViewById(R.id.main_text_inputcommand);
-
         mTogglePreview = (ToggleButton) findViewById(R.id.preview_toggle);
         mTogglePreview.setOnCheckedChangeListener(mOnPreviewToggleChangedListener);
 
+        showMessageView();
         showEnemyView();
     }
 
@@ -117,10 +116,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
                 String path = event.getPath();
                 int magicType = -1;
                 if (PATH_FIRE.equals(path)) {
-                    Toast.makeText(getApplicationContext(), "Fire event received.", Toast.LENGTH_SHORT).show();
                     magicType = MagicViewFragment.MAGIC_TYPE_FIRE;
                 } else if (PATH_THUNDER.equals(path)) {
-                    Toast.makeText(getApplicationContext(), "Thunder event received", Toast.LENGTH_SHORT).show();
                     magicType = MagicViewFragment.MAGIC_TYPE_THUNDER;
                 } else {
                     Log.d(TAG, "Unknown path: " + path);
@@ -128,10 +125,9 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
                 if (magicType != -1) {
                     removeTargetFragment(MAGIC_FRAGMENT_TAG);
-                    Fragment f = MagicViewFragment.newInstance(magicType, mPreviewMode);
+                    Fragment f = MagicViewFragment.newInstance(magicType, true);
                     showTargetFragment(f, R.id.content_holder, MAGIC_FRAGMENT_TAG);
 
-                    mTextInputCommand.setVisibility(View.INVISIBLE);
                     mTogglePreview.setVisibility(View.INVISIBLE);
                 }
             }
@@ -153,17 +149,38 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     }
 
     @Override
+    public void onStartMagic(String magic) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("魔法をとなえた!!");
+        sb.append("\n");
+        sb.append("<<" + magic + ">>");
+        mMessageView.setMessage(sb.toString());
+    }
+
+    @Override
     public void onFinishedMagic() {
-        mTextInputCommand.setVisibility(View.VISIBLE);
         mTogglePreview.setVisibility(View.VISIBLE);
         removeTargetFragment(MAGIC_FRAGMENT_TAG);
 
         mEnemyView.onEnemyDamaged();
     }
 
+    private void showMessageView() {
+        FragmentManager fm = getFragmentManager();
+        Fragment f = fm.findFragmentByTag(MESSAGE_FRAGMENT_TAG);
+        if (f == null) {
+            mMessageView = new MessageViewFragment();
+            showTargetFragment(mMessageView, R.id.message_view_holder, MESSAGE_FRAGMENT_TAG);
+        }
+    }
+
     private void showEnemyView() {
-        mEnemyView = EnemyViewFragment.newInstance(0, true);
-        showTargetFragment(mEnemyView, R.id.enemy_view_holder, ENEMY_FRAGMENT_TAG);
+        FragmentManager fm = getFragmentManager();
+        Fragment f = fm.findFragmentByTag(ENEMY_FRAGMENT_TAG);
+        if (f == null) {
+            mEnemyView = EnemyViewFragment.newInstance(0, true);
+            showTargetFragment(mEnemyView, R.id.enemy_view_holder, ENEMY_FRAGMENT_TAG);
+        }
     }
 
     private CompoundButton.OnCheckedChangeListener mOnPreviewToggleChangedListener
@@ -249,18 +266,48 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     }
 
     @Override
+    public void onEnemyEncounted(String enemyName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(enemyName + " が あらわれた！");
+        sb.append("\n");
+        sb.append("Wearから 魔法を使って 攻撃だ！");
+        mMessageView.setMessage(sb.toString());
+
+    }
+
+    @Override
     public void onEnemyDied() {
 
     }
 
     @Override
     public void onEnemyDamaged() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("こうかは ばつぐんだ");
+        sb.append("\n");
+        mMessageView.setMessage(sb.toString());
+        mEnemyView.onEnemyAttack();
+    }
 
+    @Override
+    public void onEnemyPrepareAttack(final String enemyName) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(enemyName + " の 攻撃！");
+        sb.append("\n");
+        mMessageView.setMessage(sb.toString());
     }
 
     @Override
     public void onEnemyAttacked() {
+        mMessageView.showDamageEffect();
+    }
 
+    @Override
+    public void onFinishDamageEffect() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Wearから 魔法を使って 攻撃だ！");
+        sb.append("\n");
+        mMessageView.setMessage(sb.toString());
     }
 
     private class Task extends AsyncTask<Void, Void, Void> {
@@ -281,7 +328,6 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            Toast.makeText(getApplicationContext(), "Generating RPC:" + path + " is called.", Toast.LENGTH_SHORT).show();
 
             if (path.equals(PATH_STOP_APP)) {
                 removeWearListener();

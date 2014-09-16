@@ -7,6 +7,8 @@ import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -18,9 +20,13 @@ import android.os.Handler;
 public class EnemyViewFragment extends Fragment {
 
     public interface OnEnemyEventListener {
+        void onEnemyEncounted(final String enemyName);
+
         void onEnemyDied();
 
         void onEnemyDamaged();
+
+        void onEnemyPrepareAttack(final String enemyName);
 
         void onEnemyAttacked();
     }
@@ -36,6 +42,8 @@ public class EnemyViewFragment extends Fragment {
     private int mEnemyType;
 
     private boolean mPreviewMode;
+
+    private String mEnemyName;
 
     public static EnemyViewFragment newInstance(int enemyType, boolean previewMode) {
         EnemyViewFragment fragment = new EnemyViewFragment();
@@ -102,14 +110,57 @@ public class EnemyViewFragment extends Fragment {
         return v;
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        if (mListener != null) {
+            mListener.onEnemyEncounted(mEnemyName);
+        }
+    }
+
     private void setupEnemy() {
         // TODO: check enemy type
         mImageEnemy.setImageResource(R.drawable.enemy);
-        mTextEnemyName.setText("Enemy01");
+        mEnemyName = "Enemy01";
+        mTextEnemyName.setText(mEnemyName);
     }
 
     public void onEnemyDamaged() {
         mHandler.post(mDamagedEffect);
+    }
+
+    public void onEnemyAttack() {
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                TranslateAnimation translateAnimation = new TranslateAnimation(0, 0, 20, 0);
+                translateAnimation.setDuration(200);
+                translateAnimation.setRepeatCount(2);
+                translateAnimation.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                        if (mListener != null) {
+                            mListener.onEnemyPrepareAttack(mEnemyName);
+                        }
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        if (mListener != null) {
+                            mListener.onEnemyAttacked();
+                        }
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+
+                    }
+                });
+
+                mImageEnemy.startAnimation(translateAnimation);
+            }
+        }, 1000);
     }
 
     private void showDamagedEffect() {
