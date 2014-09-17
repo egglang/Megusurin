@@ -1,6 +1,7 @@
 package ma10.megusurin;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -8,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.os.Handler;
 
 import java.util.Random;
@@ -17,20 +17,27 @@ import java.util.Random;
 /**
  *
  */
-public class MagicViewFragment extends Fragment {
+public class MagicViewFragment extends Fragment implements EventManager.IEventListener {
 
-    public interface OnMagicEffectListener {
-        void onStartMagic(final String magic);
-        void onFinishedMagic();
-    }
+    public static final String INTENT_DATA_MAGIC_TEXT = "magic_text";
 
-    private OnMagicEffectListener mListener;
+    public static final String INTENT_DATA_EVENT = "magic_event";
+
+    public static final int EVENT_START_MAGIC = 0;
+
+    public static final int EVENT_FINISH_MAGIC = 1;
+
+    public static final int EVENT_FINISH_SPECIAL_MAGIC = 2;
 
     private static final int MAGIC_EFFECT_TIME = 5000;
 
     public static final int MAGIC_TYPE_FIRE = 0;
 
     public static final int MAGIC_TYPE_THUNDER = 1;
+
+    public static final int MAGIC_TYPE_CARE = 2;
+
+    public static final int MAGIC_TYPE_SPECIAL = 100;
 
     /** Magic Type */
     private static final String ARG_MAGIC_TYPE = "magic_type";
@@ -56,22 +63,6 @@ public class MagicViewFragment extends Fragment {
     }
     public MagicViewFragment() {
         // Required empty public constructor
-    }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        if (activity instanceof OnMagicEffectListener) {
-            mListener = (OnMagicEffectListener) activity;
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-
-        mListener = null;
     }
 
     @Override
@@ -109,19 +100,34 @@ public class MagicViewFragment extends Fragment {
                 mMagicText = "神の怒りが地上に降り注ぐ";
                 soundId = R.raw.thunder;
                 break;
+
+            case MAGIC_TYPE_CARE:
+                mMagicText = "聖なる水よ傷つきし翼を癒やせ";
+                break;
+
+            case MAGIC_TYPE_SPECIAL:
+                mMagicText = "聖なる水よ闇の束縛から解き放て";
+                break;
         }
 
         mMagicImage = (ImageView) v.findViewById(R.id.magic_view_image);
-        mHandler.post(mMagicEffector);
-        mStartTime = System.currentTimeMillis();
+        if (mMagicType != MAGIC_TYPE_SPECIAL) {
+            mHandler.post(mMagicEffector);
+            mStartTime = System.currentTimeMillis();
+        } else {
+            mMagicImage.setImageResource(R.drawable.water1);
+            mHandler.post(mSpecialMagicEffect);
+        }
 
-        mMediaPlayer = MediaPlayer.create(getActivity(), soundId);
-        mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-            @Override
-            public void onPrepared(MediaPlayer mp) {
-                mp.start();
-            }
-        });
+        if (soundId != 0) {
+            mMediaPlayer = MediaPlayer.create(getActivity(), soundId);
+            mMediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    mp.start();
+                }
+            });
+        }
 
         return v;
     }
@@ -130,20 +136,28 @@ public class MagicViewFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-        if (mListener != null) {
-            mListener.onStartMagic(mMagicText);
-        }
+        dispatchEventFinished(EVENT_START_MAGIC);
     }
 
     @Override
     public void onStop() {
         super.onStop();
 
-        if (mMediaPlayer.isPlaying()) {
+        if ((mMediaPlayer != null) && mMediaPlayer.isPlaying()) {
             mMediaPlayer.stop();
         }
 
         mHandler.removeCallbacks(mMagicEffector);
+    }
+
+    private void dispatchEventFinished(final int event) {
+        Fragment targetFragment = getTargetFragment();
+        if (targetFragment != null) {
+            Intent intent = new Intent();
+            intent.putExtra(INTENT_DATA_EVENT, event);
+            intent.putExtra(INTENT_DATA_MAGIC_TEXT, mMagicText);
+            targetFragment.onActivityResult(getTargetRequestCode(), Activity.RESULT_OK, intent);
+        }
     }
 
     private final Runnable mMagicEffector = new Runnable() {
@@ -167,9 +181,7 @@ public class MagicViewFragment extends Fragment {
                 mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        if (mListener != null) {
-                            mListener.onFinishedMagic();
-                        }
+                        dispatchEventFinished(EVENT_FINISH_MAGIC);
                     }
                 }, 500);
             }
@@ -241,4 +253,20 @@ public class MagicViewFragment extends Fragment {
         }
     }
 
+    private Runnable mSpecialMagicEffect = new Runnable() {
+        @Override
+        public void run() {
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    dispatchEventFinished(EVENT_FINISH_SPECIAL_MAGIC);
+                }
+            }, MAGIC_EFFECT_TIME);
+        }
+    };
+
+    @Override
+    public void doEvent(int eventId) {
+        // nothing to do
+    }
 }

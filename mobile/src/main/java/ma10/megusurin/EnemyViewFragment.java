@@ -1,13 +1,16 @@
 package ma10.megusurin;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,21 +20,23 @@ import android.os.Handler;
 /**
  * Enemy View Fragment
  */
-public class EnemyViewFragment extends Fragment {
+public class EnemyViewFragment extends Fragment implements EventManager.IEventListener {
 
-    public interface OnEnemyEventListener {
-        void onEnemyEncounted(final String enemyName);
+    public static final String INTENT_DATA_ENEMY_NAME = "enemy_name";
 
-        void onEnemyDied();
+    public static final String INTENT_DATA_EVENT = "event_type";
 
-        void onEnemyDamaged();
+    public static final int EVENT_ENCOUNTED = 0;
 
-        void onEnemyPrepareAttack(final String enemyName);
+    public static final int EVENT_DAMAGED = 1;
 
-        void onEnemyAttacked();
-    }
+    public static final int EVENT_PREPAREATTACK = 2;
 
-    private OnEnemyEventListener mListener;
+    public static final int EVENT_ATTACKED = 3;
+
+    public static final int EVENT_WEAK = 4;
+
+    public static final int EVENT_DIED = 10;
 
     /** Enemy Type */
     private static final String ARG_ENEMY_TYPE = "enemy_type";
@@ -39,11 +44,15 @@ public class EnemyViewFragment extends Fragment {
     /** Preview Mode */
     private static final String ARG_PREVIEW_MOVE = "preview_mode";
 
+    private static final int MAX_DAMAGE_COUNT = 3;
+
     private int mEnemyType;
 
     private boolean mPreviewMode;
 
     private String mEnemyName;
+
+    private int mDamagedCount;
 
     public static EnemyViewFragment newInstance(int enemyType, boolean previewMode) {
         EnemyViewFragment fragment = new EnemyViewFragment();
@@ -72,24 +81,6 @@ public class EnemyViewFragment extends Fragment {
         mHandler = new Handler();
     }
 
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        try {
-            mListener = (OnEnemyEventListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnEnemyEventListener");
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
-
     private Handler mHandler;
 
     private ImageView mImageEnemy;
@@ -114,9 +105,11 @@ public class EnemyViewFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-        if (mListener != null) {
-            mListener.onEnemyEncounted(mEnemyName);
-        }
+        mDamagedCount = 0;
+        dispatchEnemyViewEventFinish(EVENT_ENCOUNTED);
+//        if (mListener != null) {
+//            mListener.onEnemyEncounted(mEnemyName);
+//        }
     }
 
     private void setupEnemy() {
@@ -126,7 +119,19 @@ public class EnemyViewFragment extends Fragment {
         mTextEnemyName.setText(mEnemyName);
     }
 
+    private void dispatchEnemyViewEventFinish(final int event) {
+        Fragment targetFragment = getTargetFragment();
+        if (targetFragment != null) {
+            Intent data = new Intent();
+            data.putExtra(INTENT_DATA_EVENT, event);
+            data.putExtra(INTENT_DATA_ENEMY_NAME, mEnemyName);
+            targetFragment.onActivityResult(getTargetRequestCode(), Activity.RESULT_OK, data);
+        }
+    }
+
+
     public void onEnemyDamaged() {
+        mDamagedCount++;
         mHandler.post(mDamagedEffect);
     }
 
@@ -140,16 +145,12 @@ public class EnemyViewFragment extends Fragment {
                 translateAnimation.setAnimationListener(new Animation.AnimationListener() {
                     @Override
                     public void onAnimationStart(Animation animation) {
-                        if (mListener != null) {
-                            mListener.onEnemyPrepareAttack(mEnemyName);
-                        }
+                        dispatchEnemyViewEventFinish(EVENT_PREPAREATTACK);
                     }
 
                     @Override
                     public void onAnimationEnd(Animation animation) {
-                        if (mListener != null) {
-                            mListener.onEnemyAttacked();
-                        }
+                        dispatchEnemyViewEventFinish(EVENT_ATTACKED);
                     }
 
                     @Override
@@ -197,11 +198,101 @@ public class EnemyViewFragment extends Fragment {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    if (mListener != null) {
-                        mListener.onEnemyDamaged();
-                    }
+                    dispatchEnemyViewEventFinish(EVENT_DAMAGED);
                 }
             }, delay);
         }
     };
+
+    private void onEnemyWeak() {
+        mHandler.post(mWeakEffect);
+    }
+
+    private final Runnable mWeakEffect = new Runnable() {
+        @Override
+        public void run() {
+            AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.5f);
+            alphaAnimation.setDuration(750);
+            alphaAnimation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    mImageEnemy.setAlpha(0.5f);
+                    dispatchEnemyViewEventFinish(EVENT_WEAK);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+                }
+            });
+
+            mImageEnemy.startAnimation(alphaAnimation);
+        }
+    };
+
+    private void onEnemyDied() {
+        mHandler.post(mDiedEffect);
+    }
+
+    private final Runnable mDiedEffect = new Runnable() {
+        @Override
+        public void run() {
+            TranslateAnimation transAnim1 = new TranslateAnimation(0, 10, 0, 0);
+            transAnim1.setDuration(100);
+            transAnim1.setRepeatCount(30);
+
+            TranslateAnimation transAnim2 = new TranslateAnimation(0, 0, 0, mImageEnemy.getHeight());
+            transAnim2.setDuration(3000);
+
+            AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
+            alphaAnimation.setDuration(3000);
+
+            AnimationSet animationSet = new AnimationSet(false);
+            animationSet.addAnimation(transAnim1);
+            animationSet.addAnimation(transAnim2);
+            animationSet.addAnimation(alphaAnimation);
+            animationSet.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+                    mImageEnemy.setAlpha(1.0f);
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    mImageEnemy.setAlpha(0.0f);
+                    dispatchEnemyViewEventFinish(EVENT_DIED);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+                }
+            });
+
+            mImageEnemy.startAnimation(animationSet);
+        }
+    };
+
+    @Override
+    public void doEvent(int eventId) {
+        switch (eventId) {
+            case EventManager.EVENT_DAMAGED_ENEMY:
+                onEnemyDamaged();
+                break;
+
+            case EventManager.EVENT_ATTACK_ENEMY:
+                onEnemyAttack();
+                break;
+
+            case EventManager.EVENT_WEAK_ENEMY:
+                onEnemyWeak();
+                break;
+
+            case EventManager.EVENT_DIED_ENEMY:
+                onEnemyDied();
+                break;
+        }
+    }
 }

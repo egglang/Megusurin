@@ -7,7 +7,6 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.app.Fragment;
@@ -29,8 +28,7 @@ import java.util.HashSet;
 
 public class MegusurinActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
-        NodeApi.NodeListener, MagicViewFragment.OnMagicEffectListener,
-        EnemyViewFragment.OnEnemyEventListener, MessageViewFragment.OnMessageListener {
+        NodeApi.NodeListener, EventManager.EventManagerListener {
 
 
     private static final String TAG = "Megusurin";
@@ -39,10 +37,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private static final String PATH_START_APP = "/start_app";
     private static final String PATH_STOP_APP = "/stop_app";
 
-    private static final String MAGIC_FRAGMENT_TAG = "MAGIC_VIEW";
+    private static final String EVENT_FRAGMENT_TAG = "EVENT_MG";
     private static final String CAMERA_FRAGMENT_TAG = "CAMERA_VIEW";
-    private static final String ENEMY_FRAGMENT_TAG = "ENEMY_VIEW";
-    private static final String MESSAGE_FRAGMENT_TAG = "MESSAGE_VIEW";
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -52,9 +48,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
     private ViewGroup mBackGround;
 
-    private EnemyViewFragment mEnemyView;
-
-    private MessageViewFragment mMessageView;
+    private EventManager mEventManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,8 +66,16 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         mTogglePreview = (ToggleButton) findViewById(R.id.preview_toggle);
         mTogglePreview.setOnCheckedChangeListener(mOnPreviewToggleChangedListener);
 
-        showMessageView();
-        showEnemyView();
+        setupEventManager();
+    }
+
+    private void setupEventManager() {
+        mEventManager = new EventManager();
+
+        FragmentManager fm = getFragmentManager();
+        FragmentTransaction ft = fm.beginTransaction();
+        ft.add(mEventManager, EVENT_FRAGMENT_TAG);
+        ft.commit();
     }
 
     @Override
@@ -124,11 +126,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
                 }
 
                 if (magicType != -1) {
-                    removeTargetFragment(MAGIC_FRAGMENT_TAG);
-                    Fragment f = MagicViewFragment.newInstance(magicType, true);
-                    showTargetFragment(f, R.id.content_holder, MAGIC_FRAGMENT_TAG);
-
-                    mTogglePreview.setVisibility(View.INVISIBLE);
+                    mEventManager.doMagicEvent(magicType);
                 }
             }
         });
@@ -148,41 +146,6 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         Log.d(TAG, "Node Disconnected:" + node.getId());
     }
 
-    @Override
-    public void onStartMagic(String magic) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("魔法をとなえた!!");
-        sb.append("\n");
-        sb.append("<<" + magic + ">>");
-        mMessageView.setMessage(sb.toString());
-    }
-
-    @Override
-    public void onFinishedMagic() {
-        mTogglePreview.setVisibility(View.VISIBLE);
-        removeTargetFragment(MAGIC_FRAGMENT_TAG);
-
-        mEnemyView.onEnemyDamaged();
-    }
-
-    private void showMessageView() {
-        FragmentManager fm = getFragmentManager();
-        Fragment f = fm.findFragmentByTag(MESSAGE_FRAGMENT_TAG);
-        if (f == null) {
-            mMessageView = new MessageViewFragment();
-            showTargetFragment(mMessageView, R.id.message_view_holder, MESSAGE_FRAGMENT_TAG);
-        }
-    }
-
-    private void showEnemyView() {
-        FragmentManager fm = getFragmentManager();
-        Fragment f = fm.findFragmentByTag(ENEMY_FRAGMENT_TAG);
-        if (f == null) {
-            mEnemyView = EnemyViewFragment.newInstance(0, true);
-            showTargetFragment(mEnemyView, R.id.enemy_view_holder, ENEMY_FRAGMENT_TAG);
-        }
-    }
-
     private CompoundButton.OnCheckedChangeListener mOnPreviewToggleChangedListener
             = new CompoundButton.OnCheckedChangeListener() {
 
@@ -191,7 +154,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
             mPreviewMode = isChecked;
             if (mPreviewMode) {
                 mBackGround.setBackgroundColor(Color.TRANSPARENT);
-                showTargetFragment(new CameraViewFragment(), R.id.camera_view, CAMERA_FRAGMENT_TAG);
+                addTargetFragment(new CameraViewFragment(), R.id.camera_view, CAMERA_FRAGMENT_TAG);
             } else {
                 mBackGround.setBackgroundColor(Color.BLACK);
                 removeTargetFragment(CAMERA_FRAGMENT_TAG);
@@ -199,22 +162,30 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         }
     };
 
-    private void showTargetFragment(Fragment f, int holderId, String tag) {
+    @Override
+    public void addTargetFragment(Fragment f, int containerId, String tag) {
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
-        ft.add(holderId, f, tag);
+        ft.add(containerId, f, tag);
         ft.commit();
     }
 
-    private void removeTargetFragment(String tag) {
+    @Override
+    public void removeTargetFragment(String tag) {
         FragmentManager fm = getFragmentManager();
-        FragmentTransaction ft = fm.beginTransaction();
-
-        Fragment oldFragment = fm.findFragmentByTag(tag);
-        if (oldFragment != null) {
-            ft.remove(oldFragment);
+        Fragment targetFragment = fm.findFragmentByTag(tag);
+        if (targetFragment != null) {
+            FragmentTransaction ft = fm.beginTransaction();
+            ft.remove(targetFragment);
+            ft.commit();
         }
-        ft.commit();
+    }
+
+    @Override
+    public Fragment getTargetFragment(String tag) {
+        FragmentManager fm = getFragmentManager();
+        Fragment targetFragment = fm.findFragmentByTag(tag);
+        return targetFragment;
     }
 
     private void addWearListener() {
@@ -263,51 +234,6 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         }
 
         return results;
-    }
-
-    @Override
-    public void onEnemyEncounted(String enemyName) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(enemyName + " が あらわれた！");
-        sb.append("\n");
-        sb.append("Wearから 魔法を使って 攻撃だ！");
-        mMessageView.setMessage(sb.toString());
-
-    }
-
-    @Override
-    public void onEnemyDied() {
-
-    }
-
-    @Override
-    public void onEnemyDamaged() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("こうかは ばつぐんだ");
-        sb.append("\n");
-        mMessageView.setMessage(sb.toString());
-        mEnemyView.onEnemyAttack();
-    }
-
-    @Override
-    public void onEnemyPrepareAttack(final String enemyName) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(enemyName + " の 攻撃！");
-        sb.append("\n");
-        mMessageView.setMessage(sb.toString());
-    }
-
-    @Override
-    public void onEnemyAttacked() {
-        mMessageView.showDamageEffect();
-    }
-
-    @Override
-    public void onFinishDamageEffect() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Wearから 魔法を使って 攻撃だ！");
-        sb.append("\n");
-        mMessageView.setMessage(sb.toString());
     }
 
     private class Task extends AsyncTask<Void, Void, Void> {

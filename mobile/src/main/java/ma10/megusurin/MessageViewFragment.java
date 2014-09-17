@@ -19,13 +19,16 @@ import android.widget.TextView;
  * Message and Status View Fragment
  *
  */
-public class MessageViewFragment extends Fragment {
+public class MessageViewFragment extends Fragment implements EventManager.IEventListener{
 
-    public interface OnMessageListener {
-        void onFinishDamageEffect();
+    public static MessageViewFragment newInstance() {
+        MessageViewFragment f = new MessageViewFragment();
+
+        Bundle args = new Bundle();
+        f.setArguments(args);
+
+        return f;
     }
-
-    private OnMessageListener mListener;
 
     public MessageViewFragment() {
     }
@@ -35,21 +38,6 @@ public class MessageViewFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         mHandler = new Handler();
-    }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        if (activity instanceof OnMessageListener) {
-            mListener = (OnMessageListener) activity;
-        }
-    }
-
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
     }
 
     private Handler mHandler;
@@ -101,9 +89,10 @@ public class MessageViewFragment extends Fragment {
                 mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        if (mListener != null) {
-                            mListener.onFinishDamageEffect();
-                        }
+                        dispatchEventFinished();
+//                        if (mListener != null) {
+//                            mListener.onFinishDamageEffect();
+//                        }
                     }
                 }, 1000);
             }
@@ -115,5 +104,29 @@ public class MessageViewFragment extends Fragment {
         });
 
         mViewRoot.startAnimation(translateAnimation);
+    }
+
+    @Override
+    public void doEvent(int eventId) {
+        if (eventId == EventManager.EVENT_DAMAGED_MINE) {
+            showDamageEffect();
+        }
+        else if (eventId == EventManager.EVENT_WAIT_MAGIC) {
+            showWaitMagicMessage();
+        }
+    }
+
+    private void showWaitMagicMessage() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Wearから 魔法を使って 攻撃だ！");
+        sb.append("\n");
+        setMessage(sb.toString());
+    }
+
+    private void dispatchEventFinished() {
+        Fragment targetFragment = getTargetFragment();
+        if (targetFragment != null) {
+            targetFragment.onActivityResult(getTargetRequestCode(), Activity.RESULT_OK, null);
+        }
     }
 }
