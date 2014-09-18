@@ -8,6 +8,7 @@ import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
 import android.os.Handler;
 
@@ -27,7 +28,9 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
 
     public static final int EVENT_FINISH_MAGIC = 1;
 
-    public static final int EVENT_FINISH_SPECIAL_MAGIC = 2;
+    public static final int EVENT_FINISH_CURE_MAGIC = 2;
+
+    public static final int EVENT_FINISH_SPECIAL_MAGIC = 3;
 
     private static final int MAGIC_EFFECT_TIME = 5000;
 
@@ -35,7 +38,7 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
 
     public static final int MAGIC_TYPE_THUNDER = 1;
 
-    public static final int MAGIC_TYPE_CARE = 2;
+    public static final int MAGIC_TYPE_CURE = 2;
 
     public static final int MAGIC_TYPE_SPECIAL = 100;
 
@@ -101,7 +104,7 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
                 soundId = R.raw.thunder;
                 break;
 
-            case MAGIC_TYPE_CARE:
+            case MAGIC_TYPE_CURE:
                 mMagicText = "聖なる水よ傷つきし翼を癒やせ";
                 break;
 
@@ -111,12 +114,22 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
         }
 
         mMagicImage = (ImageView) v.findViewById(R.id.magic_view_image);
-        if (mMagicType != MAGIC_TYPE_SPECIAL) {
-            mHandler.post(mMagicEffector);
-            mStartTime = System.currentTimeMillis();
-        } else {
-            mMagicImage.setImageResource(R.drawable.water1);
-            mHandler.post(mSpecialMagicEffect);
+        mStartTime = System.currentTimeMillis();
+        switch (mMagicType) {
+            case MAGIC_TYPE_THUNDER:
+            case MAGIC_TYPE_FIRE:
+                mHandler.post(mMagicEffector);
+                break;
+
+            case MAGIC_TYPE_CURE:
+                mMagicImage.setImageResource(R.drawable.cure);
+                mHandler.post(mCureEffect);
+                break;
+
+            case MAGIC_TYPE_SPECIAL:
+                mMagicImage.setImageResource(R.drawable.water1);
+                mHandler.post(mSpecialMagicEffect);
+                break;
         }
 
         if (soundId != 0) {
@@ -252,6 +265,44 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
             mMediaPlayer.start();
         }
     }
+
+    private Runnable mCureEffect = new Runnable() {
+        @Override
+        public void run() {
+            long now = System.currentTimeMillis();
+            if ((mStartTime + 2000) > now) {
+                mHandler.postDelayed(mCureEffect, 250);
+            } else {
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        dispatchEventFinished(EVENT_FINISH_CURE_MAGIC);
+                    }
+                }, 500);
+            }
+
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    Random rand = new Random();
+                    final int newX = rand.nextInt(1000) - 500;
+                    final int newY = rand.nextInt(800) - 400;
+                    final float size = ((float) rand.nextInt(100)) / 100;
+
+                    mMagicImage.setScaleX(size);
+                    mMagicImage.setScaleY(size);
+                    mMagicImage.setX(newX);
+                    mMagicImage.setY(newY);
+
+                    AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
+                    alphaAnimation.setDuration(250);
+                    mMagicImage.startAnimation(alphaAnimation);
+                }
+            });
+        }
+    };
+
+
 
     private Runnable mSpecialMagicEffect = new Runnable() {
         @Override

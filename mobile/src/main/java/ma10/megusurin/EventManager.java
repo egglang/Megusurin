@@ -40,6 +40,8 @@ public class EventManager extends Fragment {
 
     public static final int EVENT_DIED_ENEMY = 7;
 
+    public static final int EVENT_CURED_MINE = 8;
+
     public static final int EVENT_FINISHED = 99;
 
     private static final String TAG_MESSAGE_VIEW = "message_view";
@@ -162,6 +164,13 @@ public class EventManager extends Fragment {
                             }
                             break;
 
+                        case MagicViewFragment.MAGIC_TYPE_CURE:
+                            mEventListener.removeTargetFragment(TAG_MAGIC_VIEW);
+
+                            mCurrentEventId = EVENT_CURED_MINE;
+                            dispatchNextEvent();
+                            break;
+
                         case MagicViewFragment.EVENT_FINISH_SPECIAL_MAGIC:
                             mEventListener.removeTargetFragment(TAG_MAGIC_VIEW);
 
@@ -214,8 +223,18 @@ public class EventManager extends Fragment {
                     break;
 
                 case REQUEST_MESSAGE:
-                    showMagicWaitMessage();
-                    onFinishedEvent();
+                    int event = data.getIntExtra(MessageViewFragment.INTENT_DATA_EVENT, 0);
+                    switch (event) {
+                        case MessageViewFragment.EVENT_CURED:
+                            mCurrentEventId = EVENT_WAIT_MAGIC;
+                            dispatchNextEvent();
+                            break;
+
+                        case MessageViewFragment.EVENT_DAMAGED:
+                            showCureMagicWaitMessage();
+                            doCureMagicEvent();
+                            break;
+                    }
                     break;
             }
         }
@@ -285,15 +304,31 @@ public class EventManager extends Fragment {
             return;
         }
 
+        if (mCurrentEventId != EVENT_WAIT_MAGIC) {
+            Log.d(TAG, "Current event can not accept magic command.");
+            return;
+        }
+
         mCurrentEventId = EVENT_DO_MAGIC;
 
-        if (magicType != MagicViewFragment.MAGIC_TYPE_CARE) {
+        if (magicType != MagicViewFragment.MAGIC_TYPE_CURE) {
             mMagicCount++;
         }
 
         MagicViewFragment f = MagicViewFragment.newInstance(magicType, true);
         f.setTargetFragment(this, REQUEST_MAGIC);
         mEventListener.addTargetFragment(f, R.id.content_holder, TAG_MAGIC_VIEW);
+    }
+
+    public void doCureMagicEvent() {
+        mHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                MagicViewFragment f = MagicViewFragment.newInstance(MagicViewFragment.MAGIC_TYPE_CURE, true);
+                f.setTargetFragment(EventManager.this, REQUEST_MAGIC);
+                mEventListener.addTargetFragment(f, R.id.content_holder, TAG_MAGIC_VIEW);
+            }
+        }, 3000);
     }
 
     private void doSpecialMagicEvent() {
@@ -307,9 +342,9 @@ public class EventManager extends Fragment {
         }, 3000);
     }
 
-    private void showMagicWaitMessage() {
+    private void showCureMagicWaitMessage() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Wearから 魔法を使って 攻撃だ！");
+        sb.append("Wearから 魔法を使って 回復だ！");
         sb.append("\n");
         mMessageView.setMessage(sb.toString());
     }
