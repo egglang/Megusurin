@@ -3,10 +3,13 @@ package ma10.megusurin;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
@@ -27,19 +30,36 @@ import com.google.android.gms.wearable.Wearable;
 import java.util.Collection;
 import java.util.HashSet;
 
+import ma10.megusurin.lib.view.EventManager;
+import ma10.megusurin.lib.view.MagicViewFragment;
+import ma10.megusurin.lib.web.YodaAPIAccesser;
+import ma10.megusurin.lib.web.MegusurinEventChecker;
+
 public class MegusurinActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
-        NodeApi.NodeListener, EventManager.EventManagerListener {
+        NodeApi.NodeListener, EventManager.EventManagerListener,
+        MegusurinEventChecker.IMegusurinEventListener {
 
+    public static final String INTENT_KEY_MODE = "mode";
+    public static final int MODE_NORMAL = 0;
+    public static final int MODE_TEST = 1;
+
+    public static final String INTENT_BATTLE_START = "ma10.megusurin.event.start.battle";
 
     private static final String TAG = "Megusurin";
     private static final String PATH_FIRE = "/fire";
     private static final String PATH_THUNDER = "/thunder";
+    private static final String PATH_ICE = "/ice";
     private static final String PATH_START_APP = "/start_app";
+    private static final String PATH_START_CHARGE = "/start_charge";
     private static final String PATH_STOP_APP = "/stop_app";
+    private static final String PATH_SET_PARKING = "/set_parking";
+    private static final String PATH_START_BATTLE = "/start_battle";
 
     private static final String EVENT_FRAGMENT_TAG = "EVENT_MG";
     private static final String CAMERA_FRAGMENT_TAG = "CAMERA_VIEW";
+
+    private int mMode;
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -50,6 +70,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private ViewGroup mBackGround;
 
     private EventManager mEventManager;
+
+    private MegusurinEventChecker mEventChecker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,9 +88,19 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
                 .build();
 
         mBackGround = (ViewGroup) findViewById(R.id.main_back);
+        mBackGround.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
+                View.SYSTEM_UI_FLAG_FULLSCREEN |
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+
 
         mTogglePreview = (ToggleButton) findViewById(R.id.preview_toggle);
         mTogglePreview.setOnCheckedChangeListener(mOnPreviewToggleChangedListener);
+
+        if (getIntent() != null) {
+            mMode = getIntent().getIntExtra(INTENT_KEY_MODE, MODE_NORMAL);
+        }
+
+        mEventChecker = new MegusurinEventChecker(this);
 
         setupEventManager();
     }
@@ -86,13 +118,17 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     protected void onResume() {
         super.onResume();
         mGoogleApiClient.connect();
+        mEventChecker.startEventCheck();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        stopWearApp();
+        if (!mOccuredEncountEvnet) {
+            stopWearApp();
+            mEventChecker.stopEventCheck();
+        }
     }
 
     @Override
@@ -100,7 +136,6 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         Log.d(TAG, "onConnected(): Successfully connected to Google API client");
 
         addWearListener();
-        startWearApp();
     }
 
     @Override
@@ -125,12 +160,22 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
                     magicType = MagicViewFragment.MAGIC_TYPE_FIRE;
                 } else if (PATH_THUNDER.equals(path)) {
                     magicType = MagicViewFragment.MAGIC_TYPE_THUNDER;
+                } else if (PATH_ICE.equals(path)) {
+                    magicType = MagicViewFragment.MAGIC_TYPE_ICE;
+                } else if (PATH_START_BATTLE.equals(path)) {
+                    try {
+                        startBattleEvent(mEnemyType);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                 } else {
                     Log.d(TAG, "Unknown path: " + path);
                 }
 
                 if (magicType != -1) {
                     mEventManager.doMagicEvent(magicType);
+
+                    new PostDoMagicTask().execute(new Integer[]{magicType});
                 }
             }
         });
@@ -158,7 +203,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
             mPreviewMode = isChecked;
             if (mPreviewMode) {
                 mBackGround.setBackgroundColor(Color.TRANSPARENT);
-                addTargetFragment(new CameraViewFragment(), R.id.camera_view, CAMERA_FRAGMENT_TAG);
+                addTargetFragment(new CameraViewFragment(), R.id.camera_view, CAMERA_FRAGMENT_TAG, false);
             } else {
                 mBackGround.setBackgroundColor(Color.BLACK);
                 removeTargetFragment(CAMERA_FRAGMENT_TAG);
@@ -167,9 +212,14 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     };
 
     @Override
-    public void addTargetFragment(Fragment f, int containerId, String tag) {
+    public void addTargetFragment(Fragment f, int containerId, String tag, boolean isAnimation) {
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
+
+        if (isAnimation) {
+            ft.setCustomAnimations(R.animator.fade_in, 0);
+        }
+
         ft.add(containerId, f, tag);
         ft.commit();
     }
@@ -209,6 +259,14 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         new Task(PATH_START_APP).execute();
     }
 
+    private void startChargeDialog() {
+        new Task(PATH_START_CHARGE).execute();
+    }
+
+    private void startBattleCharge() {
+        new Task(PATH_SET_PARKING).execute();
+    }
+
     private void stopWearApp() {
         new Task(PATH_STOP_APP).execute();
     }
@@ -240,6 +298,27 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         return results;
     }
 
+    @Override
+    public void onGameStart() {
+    }
+
+    @Override
+    public void onEnemyEncount() {
+        mEnemyType = 0;
+        mOccuredEncountEvnet = true;
+        EventNotify.sendBattleEventNotify(this);
+    }
+
+    @Override
+    public void onWaitBattlePrepare() {
+        dispatchBattleEvent();
+    }
+
+    @Override
+    public void onBattlePrepared() {
+//        startBattleEvent(mEnemyType);
+    }
+
     private class Task extends AsyncTask<Void, Void, Void> {
 
         private final String path;
@@ -265,4 +344,61 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         }
     }
 
+    private int mEnemyType;
+
+    private boolean mOccuredEncountEvnet = false;
+
+    private void dispatchBattleEvent() {
+        startChargeDialog();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        String action = intent.getAction();
+        if (action.equals(INTENT_BATTLE_START)) {
+
+            intent.setAction(Intent.ACTION_VIEW);
+
+            EventNotify.cancelBattleEventNotify(this);
+
+            try {
+                startBattleEvent(mEnemyType);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void startBattleEvent(int enemyType) throws RemoteException {
+        mEventManager.encounterEnemy(enemyType);
+        mOccuredEncountEvnet = false;
+
+        new PostOccurEncountTask().execute();
+    }
+
+    private class PostOccurEncountTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            YodaAPIAccesser yodaAPIAccesser = new YodaAPIAccesser(true);
+            yodaAPIAccesser.postOccurEncount(mEnemyType);
+
+            return null;
+        }
+    };
+
+    private class PostDoMagicTask extends AsyncTask<Integer, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Integer... params) {
+
+            int magicType = params[0];
+            YodaAPIAccesser yodaAPIAccesser = new YodaAPIAccesser(false);
+            yodaAPIAccesser.postMagicType(magicType);
+
+            return null;
+        }
+    }
 }

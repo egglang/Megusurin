@@ -20,19 +20,19 @@
         android:layout_gravity="top|right"/>
 
     <FrameLayout
-        android:id="@+id/enemy_view_holder"
+        android:id="@id/enemy_view_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent"/>
 
     <FrameLayout
-        android:id="@+id/content_holder"
+        android:id="@id/magic_view_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent"/>
 
     <FrameLayout
-        android:id="@+id/message_view_holder"
+        android:id="@id/message_view_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@android:color/transparent"/>

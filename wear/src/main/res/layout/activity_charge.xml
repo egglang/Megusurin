@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.wearable.view.BoxInsetLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    android:background="#FFF">
+
+    <FrameLayout
+        android:id="@+id/delayed_view_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <android.support.wearable.view.DelayedConfirmationView
+            android:id="@+id/delayed_confirmation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/charge"
+            app:circle_color="@android:color/transparent"
+            app:circle_radius="@dimen/circle_radius"
+            app:circle_radius_pressed="@dimen/circle_radius_pressed"
+            app:circle_padding="@dimen/circle_padding"
+            app:circle_border_width="@dimen/circle_border_normal_width"
+            app:circle_border_color="#8EE1E0"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|bottom"
+            android:text="敵を発見！ \nタップしてチャージ！"
+            android:layout_marginBottom="20dp"
+            android:textColor="#000"
+            android:textSize="14sp"/>
+
+    </FrameLayout>
+
+
+</android.support.wearable.view.BoxInsetLayout>

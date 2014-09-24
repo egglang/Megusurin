@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="message_view_holder" type="id" />
+    <item name="enemy_view_holder" type="id" />
+    <item name="magic_view_holder" type="id" />
+</resources>

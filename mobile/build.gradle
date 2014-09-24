@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 20
-    buildToolsVersion "20.0.0"
+    buildToolsVersion '20.0.0'
 
     defaultConfig {
         applicationId "ma10.megusurin"
@@ -24,4 +24,6 @@ dependencies {
     compile files('libs/BT200Ctrl.jar')
     wearApp project(':wear')
     compile 'com.google.android.gms:play-services-wearable:+'
+    compile project(':lib-view')
+    compile project(':lib-webapi')
 }

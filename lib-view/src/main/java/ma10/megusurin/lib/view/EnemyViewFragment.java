@@ -1,10 +1,11 @@
-package ma10.megusurin;
+package ma10.megusurin.lib.view;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.app.Fragment;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,8 +15,6 @@ import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import android.os.Handler;
 
 /**
  * Enemy View Fragment
@@ -94,6 +93,7 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
         View v = inflater.inflate(R.layout.fragment_enemy_view, container, false);
 
         mImageEnemy = (ImageView) v.findViewById(R.id.enemy_image);
+
         mTextEnemyName = (TextView) v.findViewById(R.id.enemy_text_name);
 
         setupEnemy();
@@ -107,14 +107,12 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
 
         mDamagedCount = 0;
         dispatchEnemyViewEventFinish(EVENT_ENCOUNTED);
-//        if (mListener != null) {
-//            mListener.onEnemyEncounted(mEnemyName);
-//        }
     }
 
     private void setupEnemy() {
         // TODO: check enemy type
-        mImageEnemy.setImageResource(R.drawable.enemy);
+        mImageEnemy.setImageResource(R.drawable.enemy1);
+
         mEnemyName = "Enemy01";
         mTextEnemyName.setText(mEnemyName);
     }
@@ -213,6 +211,7 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
         public void run() {
             AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.5f);
             alphaAnimation.setDuration(750);
+            alphaAnimation.setFillAfter(true);
             alphaAnimation.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
@@ -220,7 +219,7 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
-                    mImageEnemy.setAlpha(0.5f);
+                    mImageEnemy.setImageResource(R.drawable.enemy2);
                     dispatchEnemyViewEventFinish(EVENT_WEAK);
                 }
 
@@ -257,6 +256,7 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
             animationSet.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
+                    mImageEnemy.setImageResource(R.drawable.enemy3);
                     mImageEnemy.setAlpha(1.0f);
                 }
 

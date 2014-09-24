@@ -1,21 +1,20 @@
-package ma10.megusurin;
-
+package ma10.megusurin.lib.view;
 
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import java.util.Random;
 
 
 /**
@@ -79,7 +78,7 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
         mViewRoot = (ViewGroup) v.findViewById(R.id.message_root);
 
         mImageChar = (ImageView) v.findViewById(R.id.message_image_char);
-        mImageChar.setImageResource(R.drawable.char_claudia);
+        mImageChar.setImageResource(R.drawable.status_face);
 
         mTextHp = (TextView) v.findViewById(R.id.message_text_hp);
         mTextHp.setText(String.valueOf(MAX_HITPOINT));
@@ -185,6 +184,20 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
         else if (eventId == EventManager.EVENT_CURED_MINE) {
             showCuredEffect();
         }
+        else if (eventId == EventManager.EVENT_DRIVING) {
+            showDrivingMessage();
+            changeToDriveMode();
+        }
+        else if (eventId == EventManager.EVENT_ENCOUNTER_ENEMY) {
+            changeToBattleMode();
+        }
+    }
+
+    private void showDrivingMessage() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("索敵中...");
+        sb.append("\n");
+        setMessage(sb.toString());
     }
 
     private void showWaitMagicMessage() {
@@ -192,6 +205,60 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
         sb.append("Wearから 魔法を使って 攻撃だ！");
         sb.append("\n");
         setMessage(sb.toString());
+    }
+
+    private void changeToBattleMode() {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                AnimationSet animationSet = new AnimationSet(false);
+
+                final AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
+                final TranslateAnimation translateAnimation = new TranslateAnimation(0, getView().getWidth() + 10, 0, 0);
+
+                animationSet.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        mTextMessage.setBackgroundResource(R.drawable.msg_meg_70);
+
+                        AnimationSet animationSet1 = new AnimationSet(false);
+
+                        AlphaAnimation alphaAnimation1 = new AlphaAnimation(0.0f, 1.0f);
+                        TranslateAnimation translateAnimation1 = new TranslateAnimation(-getView().getWidth(), 0, 0, 0);
+
+                        animationSet1.setFillAfter(true);
+                        animationSet1.addAnimation(alphaAnimation1);
+                        animationSet1.addAnimation(translateAnimation1);
+                        animationSet1.setDuration(250);
+
+                        mTextMessage.startAnimation(animationSet1);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+                    }
+                });
+
+                animationSet.addAnimation(alphaAnimation);
+                animationSet.addAnimation(translateAnimation);
+                animationSet.setDuration(250);
+                animationSet.setFillAfter(true);
+                mTextMessage.startAnimation(animationSet);
+            }
+        });
+    }
+
+    private void changeToDriveMode() {
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mTextMessage.setBackgroundResource(R.drawable.msg_drive_70);
+            }
+        });
     }
 
     private void dispatchEventFinished(final int event) {

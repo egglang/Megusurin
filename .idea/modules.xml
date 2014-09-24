@@ -3,7 +3,10 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Megusurin.iml" filepath="$PROJECT_DIR$/Megusurin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lib-view/lib-view.iml" filepath="$PROJECT_DIR$/lib-view/lib-view.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lib-webapi/lib-webapi.iml" filepath="$PROJECT_DIR$/lib-webapi/lib-webapi.iml" />
       <module fileurl="file://$PROJECT_DIR$/mobile/mobile.iml" filepath="$PROJECT_DIR$/mobile/mobile.iml" />
+      <module fileurl="file://$PROJECT_DIR$/moverio/moverio.iml" filepath="$PROJECT_DIR$/moverio/moverio.iml" />
       <module fileurl="file://$PROJECT_DIR$/wear/wear.iml" filepath="$PROJECT_DIR$/wear/wear.iml" />
     </modules>
   </component>

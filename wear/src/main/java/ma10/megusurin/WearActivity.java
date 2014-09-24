@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.speech.RecognizerIntent;
 import android.support.wearable.view.WearableListView;
 import android.text.TextUtils;
@@ -36,13 +37,17 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
 
     private static final int INDEX_FIRE = 0;
     private static final int INDEX_THUNDER = 1;
-    private static final int INDEX_VOICE = 2;
+    private static final int INDEX_ICE = 2;
+    private static final int INDEX_VOICE = 3;
     private static final String TAG = "Megusurin";
     private static final String PATH_FIRE = "/fire";
     private static final String PATH_THUNDER = "/thunder";
+    private static final String PATH_ICE = "/ice";
     private static final String PATH_STOP_APP = "/stop_app";
 
     private GoogleApiClient mGoogleApiClient;
+
+    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +56,8 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_wear);
+
+        mHandler = new Handler();
 
         WearableListView listView = (WearableListView) findViewById(R.id.list);
         listView.setAdapter(new Adapter(this));
@@ -146,6 +153,8 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
         new Task(PATH_THUNDER).execute();
     }
 
+    public void doIce() { new Task(PATH_ICE).execute(); }
+
     private void sendMessage(String node, String path) {
         Wearable.MessageApi.sendMessage(
                 mGoogleApiClient, node, path, new byte[0]).setResultCallback(
@@ -186,6 +195,9 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
                 case INDEX_THUNDER:
                     label = "神の怒りが地上に降り注ぐ";
                     break;
+                case INDEX_ICE:
+                    label = "凍てつく氷河につつまれて眠れ";
+                    break;
                 case INDEX_VOICE:
                 default:
                     label = "我が声の導きに従え";
@@ -199,7 +211,7 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
 
         @Override
         public int getItemCount() {
-            return 3;
+            return 4;
         }
     }
 
@@ -210,6 +222,9 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
                 break;
             case INDEX_THUNDER:
                 doThunder();
+                break;
+            case INDEX_ICE:
+                doIce();
                 break;
             case INDEX_VOICE:
             default:
@@ -247,12 +262,16 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
                 if (TextUtils.isEmpty(result)) {
                     continue;
                 }
-                if (result.contains("炎") || result.contains("燃") || result.contains("ほのお") || result.contains("メラ")) {
+                if (result.contains("炎") || result.contains("燃") || result.contains("ほのお") || result.contains("メラ") || result.contains("ファイア")) {
                     doFire();
                     return;
                 }
-                if (result.contains("雷") || result.contains("神の怒") || result.contains("かみなり") || result.contains("デイン")) {
+                if (result.contains("雷") || result.contains("神の怒") || result.contains("かみなり") || result.contains("デイン") || result.contains("サンダー")) {
                     doThunder();
+                    return;
+                }
+                if (result.contains("氷") || result.contains("氷河") || result.contains("凍てつく") || result.contains("ヒャド") || result.contains("アイス")) {
+                    doIce();
                     return;
                 }
 

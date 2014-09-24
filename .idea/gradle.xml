@@ -8,7 +8,10 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/lib-view" />
+            <option value="$PROJECT_DIR$/lib-webapi" />
             <option value="$PROJECT_DIR$/mobile" />
+            <option value="$PROJECT_DIR$/moverio" />
             <option value="$PROJECT_DIR$/wear" />
           </set>
         </option>

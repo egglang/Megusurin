@@ -73,13 +73,11 @@
         android:id="@+id/message_text_msg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/message_back"
-        android:text="@string/input_command"
+        android:background="@drawable/msg_drive_70"
+        android:text=" \n"
         android:textSize="28sp"
         android:layout_margin="18dp"
-        android:textColor="#FFF"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
+        android:textColor="#000"
+        android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>

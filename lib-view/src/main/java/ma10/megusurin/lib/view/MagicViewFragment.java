@@ -1,16 +1,15 @@
-package ma10.megusurin;
+package ma10.megusurin.lib.view;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.app.Fragment;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AlphaAnimation;
 import android.widget.ImageView;
-import android.os.Handler;
 
 import java.util.Random;
 
@@ -39,6 +38,8 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
     public static final int MAGIC_TYPE_THUNDER = 1;
 
     public static final int MAGIC_TYPE_CURE = 2;
+
+    public static final int MAGIC_TYPE_ICE = 3;
 
     public static final int MAGIC_TYPE_SPECIAL = 100;
 
@@ -104,6 +105,10 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
                 soundId = R.raw.thunder;
                 break;
 
+            case MAGIC_TYPE_ICE:
+                mMagicText = "凍てつく氷河につつまれて眠れ";
+                break;
+
             case MAGIC_TYPE_CURE:
                 mMagicText = "聖なる水よ傷つきし翼を癒やせ";
                 break;
@@ -118,16 +123,15 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
         switch (mMagicType) {
             case MAGIC_TYPE_THUNDER:
             case MAGIC_TYPE_FIRE:
+            case MAGIC_TYPE_ICE:
                 mHandler.post(mMagicEffector);
                 break;
 
             case MAGIC_TYPE_CURE:
-                mMagicImage.setImageResource(R.drawable.cure);
                 mHandler.post(mCureEffect);
                 break;
 
             case MAGIC_TYPE_SPECIAL:
-                mMagicImage.setImageResource(R.drawable.water1);
                 mHandler.post(mSpecialMagicEffect);
                 break;
         }
@@ -184,6 +188,10 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
                 case MAGIC_TYPE_THUNDER:
                     delayTime = 100;
                     break;
+
+                case MAGIC_TYPE_ICE:
+                    delayTime = 1000;
+                    break;
             }
 
 
@@ -209,6 +217,10 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
 
                         case MAGIC_TYPE_THUNDER:
                             showEffectThunder();
+                            break;
+
+                        case MAGIC_TYPE_ICE:
+                            showEffectIce();
                             break;
                     }
                 }
@@ -241,6 +253,21 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
         mMagicImage.setX(moveX);
     }
 
+    private void showEffectIce() {
+        Random rand = new Random();
+        mMagicImage.setX(0);
+        mMagicImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        mMagicImage.setImageResource(R.drawable.ice);
+
+        int moveX = rand.nextInt(1000) - 500;
+        mMagicImage.setX(moveX);
+
+        float scale = (float)rand.nextInt(50) / 100;
+        scale += 0.5f;
+        mMagicImage.setScaleX(scale);
+        mMagicImage.setScaleY(scale);
+    }
+
     private void showEffectThunder() {
         Random rand = new Random();
         int id = rand.nextInt(3);
@@ -266,12 +293,13 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
         }
     }
 
+    private int mCureEffectIndex = 0;
+
     private Runnable mCureEffect = new Runnable() {
         @Override
         public void run() {
-            long now = System.currentTimeMillis();
-            if ((mStartTime + 2000) > now) {
-                mHandler.postDelayed(mCureEffect, 250);
+            if (mCureEffectIndex < 6) {
+                mHandler.postDelayed(mCureEffect, 750);
             } else {
                 mHandler.postDelayed(new Runnable() {
                     @Override
@@ -284,35 +312,70 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    Random rand = new Random();
-                    final int newX = rand.nextInt(1000) - 500;
-                    final int newY = rand.nextInt(800) - 400;
-                    final float size = ((float) rand.nextInt(100)) / 100;
 
-                    mMagicImage.setScaleX(size);
-                    mMagicImage.setScaleY(size);
-                    mMagicImage.setX(newX);
-                    mMagicImage.setY(newY);
+                    int resId = 0;
+                    switch (mCureEffectIndex) {
+                        case 0:
+                            resId = R.drawable.kaihuku_1;
+                            break;
+                        case 1:
+                            resId = R.drawable.kaihuku_2;
+                            break;
+                        case 2:
+                            resId = R.drawable.kaihuku_3;
+                            break;
+                        case 3:
+                            resId = R.drawable.kaihuku_4;
+                            break;
+                        case 4:
+                            resId = R.drawable.kaihuku_5;
+                            break;
+                    }
 
-                    AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
-                    alphaAnimation.setDuration(250);
-                    mMagicImage.startAnimation(alphaAnimation);
+                    mMagicImage.setImageResource(resId);
+                    mCureEffectIndex++;
                 }
             });
         }
     };
 
-
+    private int mSpecialEffectIndex = 0;
 
     private Runnable mSpecialMagicEffect = new Runnable() {
         @Override
         public void run() {
-            mHandler.postDelayed(new Runnable() {
+            if (mSpecialEffectIndex < 3) {
+                mHandler.postDelayed(mSpecialMagicEffect, 1000);
+            } else {
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        dispatchEventFinished(EVENT_FINISH_SPECIAL_MAGIC);
+                    }
+                }, 500);
+            }
+
+            mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    dispatchEventFinished(EVENT_FINISH_SPECIAL_MAGIC);
+
+                    int resId = 0;
+                    switch (mSpecialEffectIndex) {
+                        case 0:
+                            resId = R.drawable.hokaku_1;
+                            break;
+                        case 1:
+                            resId = R.drawable.hokaku_2;
+                            break;
+                        case 2:
+                            resId = R.drawable.hokaku_3;
+                            break;
+                    }
+
+                    mMagicImage.setImageResource(resId);
+                    mSpecialEffectIndex++;
                 }
-            }, MAGIC_EFFECT_TIME);
+            });
         }
     };
 

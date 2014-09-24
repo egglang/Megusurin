@@ -1,11 +1,11 @@
-package ma10.megusurin;
+package ma10.megusurin.lib.view;
 
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.os.Handler;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ public class EventManager extends Fragment {
     private static final String TAG = EventManager.class.getSimpleName();
 
     public interface EventManagerListener {
-        void addTargetFragment(Fragment f, int containerId, String tag);
+        void addTargetFragment(Fragment f, int containerId, String tag, boolean isAnimation);
 
         void removeTargetFragment(String tag);
 
@@ -26,21 +26,25 @@ public class EventManager extends Fragment {
 
     public static final int EVENT_INIT = 0;
 
-    public static final int EVENT_WAIT_MAGIC = 1;
+    public static final int EVENT_DRIVING = 1;
 
-    public static final int EVENT_DO_MAGIC = 2;
+    public static final int EVENT_ENCOUNTER_ENEMY = 2;
 
-    public static final int EVENT_DAMAGED_ENEMY = 3;
+    public static final int EVENT_WAIT_MAGIC = 3;
 
-    public static final int EVENT_ATTACK_ENEMY = 4;
+    public static final int EVENT_DO_MAGIC = 4;
 
-    public static final int EVENT_DAMAGED_MINE = 5;
+    public static final int EVENT_DAMAGED_ENEMY = 5;
 
-    public static final int EVENT_WEAK_ENEMY = 6;
+    public static final int EVENT_ATTACK_ENEMY = 6;
 
-    public static final int EVENT_DIED_ENEMY = 7;
+    public static final int EVENT_DAMAGED_MINE = 7;
 
-    public static final int EVENT_CURED_MINE = 8;
+    public static final int EVENT_WEAK_ENEMY = 8;
+
+    public static final int EVENT_DIED_ENEMY = 9;
+
+    public static final int EVENT_CURED_MINE = 10;
 
     public static final int EVENT_FINISHED = 99;
 
@@ -115,8 +119,6 @@ public class EventManager extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-
-        mCurrentEventId = EVENT_WAIT_MAGIC;
     }
 
     @Override
@@ -189,6 +191,7 @@ public class EventManager extends Fragment {
                     switch (event) {
                         case EnemyViewFragment.EVENT_ENCOUNTED:
                             showEnemyEncountMessage(enemyName);
+                            onFinishedEvent();
                             break;
 
                         case EnemyViewFragment.EVENT_DAMAGED:
@@ -245,6 +248,12 @@ public class EventManager extends Fragment {
 
         switch (mCurrentEventId) {
             case EVENT_INIT:
+                mCurrentEventId = EVENT_DRIVING;
+                break;
+            case EVENT_DRIVING:
+                mCurrentEventId = EVENT_ENCOUNTER_ENEMY;
+                break;
+            case EVENT_ENCOUNTER_ENEMY:
                 mCurrentEventId = EVENT_WAIT_MAGIC;
                 break;
             case EVENT_WAIT_MAGIC:
@@ -286,14 +295,26 @@ public class EventManager extends Fragment {
         if (mEventListener.getTargetFragment(TAG_MESSAGE_VIEW) == null) {
             mMessageView = MessageViewFragment.newInstance();
             mMessageView.setTargetFragment(this, REQUEST_MESSAGE);
-            mEventListener.addTargetFragment(mMessageView, R.id.message_view_holder, TAG_MESSAGE_VIEW);
+            mEventListener.addTargetFragment(mMessageView, R.id.message_view_holder, TAG_MESSAGE_VIEW, false);
             registerEventListener(mMessageView);
+
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    onFinishedEvent();
+                }
+            }, 500);
         }
+    }
+
+    public void encounterEnemy(final int enemyType) {
+        mCurrentEventId = EVENT_ENCOUNTER_ENEMY;
+        dispatchNextEvent();
 
         if (mEventListener.getTargetFragment(TAG_ENEMY_VIEW) == null) {
-            mEnemyView = EnemyViewFragment.newInstance(0, true);
+            mEnemyView = EnemyViewFragment.newInstance(enemyType, true);
             mEnemyView.setTargetFragment(this, REQUEST_ENEMY);
-            mEventListener.addTargetFragment(mEnemyView, R.id.enemy_view_holder, TAG_ENEMY_VIEW);
+            mEventListener.addTargetFragment(mEnemyView, R.id.enemy_view_holder, TAG_ENEMY_VIEW, true);
             registerEventListener(mEnemyView);
         }
     }
@@ -317,7 +338,7 @@ public class EventManager extends Fragment {
 
         MagicViewFragment f = MagicViewFragment.newInstance(magicType, true);
         f.setTargetFragment(this, REQUEST_MAGIC);
-        mEventListener.addTargetFragment(f, R.id.content_holder, TAG_MAGIC_VIEW);
+        mEventListener.addTargetFragment(f, R.id.magic_view_holder, TAG_MAGIC_VIEW,false);
     }
 
     public void doCureMagicEvent() {
@@ -326,7 +347,7 @@ public class EventManager extends Fragment {
             public void run() {
                 MagicViewFragment f = MagicViewFragment.newInstance(MagicViewFragment.MAGIC_TYPE_CURE, true);
                 f.setTargetFragment(EventManager.this, REQUEST_MAGIC);
-                mEventListener.addTargetFragment(f, R.id.content_holder, TAG_MAGIC_VIEW);
+                mEventListener.addTargetFragment(f, R.id.magic_view_holder, TAG_MAGIC_VIEW, false);
             }
         }, 3000);
     }
@@ -337,7 +358,7 @@ public class EventManager extends Fragment {
             public void run() {
                 MagicViewFragment f = MagicViewFragment.newInstance(MagicViewFragment.MAGIC_TYPE_SPECIAL, true);
                 f.setTargetFragment(EventManager.this, REQUEST_MAGIC);
-                mEventListener.addTargetFragment(f, R.id.content_holder, TAG_MAGIC_VIEW);
+                mEventListener.addTargetFragment(f, R.id.magic_view_holder, TAG_MAGIC_VIEW, false);
             }
         }, 3000);
     }
