@@ -47,11 +47,9 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         MegusurinEventChecker.IMegusurinEventListener,
         SensorEventListener {
 
-    public static final String INTENT_KEY_MODE = "mode";
-    public static final int MODE_NORMAL = 0;
-    public static final int MODE_TEST = 1;
-
     public static final String INTENT_BATTLE_START = "ma10.megusurin.event.start.battle";
+
+    public static final String KEY_MODE_TRAINING = "mode_training";
 
     private static final String TAG = "Megusurin";
     private static final String PATH_FIRE = "/fire";
@@ -66,7 +64,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private static final String EVENT_FRAGMENT_TAG = "EVENT_MG";
     private static final String CAMERA_FRAGMENT_TAG = "CAMERA_VIEW";
 
-    private int mMode;
+    private boolean mTrainingMode;
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -108,7 +106,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         mTogglePreview.setOnCheckedChangeListener(mOnPreviewToggleChangedListener);
 
         if (getIntent() != null) {
-            mMode = getIntent().getIntExtra(INTENT_KEY_MODE, MODE_NORMAL);
+            mTrainingMode = getIntent().getBooleanExtra(KEY_MODE_TRAINING, false);
         }
 
         mEventChecker = new MegusurinEventChecker(this);
@@ -119,7 +117,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     }
 
     private void setupEventManager() {
-        mEventManager = new EventManager();
+        mEventManager = EventManager.newInstance(mTrainingMode);
 
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
@@ -131,7 +129,16 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     protected void onResume() {
         super.onResume();
         mGoogleApiClient.connect();
-        mEventChecker.startEventCheck();
+
+        if (mTrainingMode) {
+            try {
+                startBattleEvent(mEnemyType);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        } else {
+            mEventChecker.startEventCheck();
+        }
 
         List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
 
@@ -161,6 +168,9 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         Log.d(TAG, "onConnected(): Successfully connected to Google API client");
 
         addWearListener();
+        if (mTrainingMode) {
+            startWearApp();
+        }
     }
 
     @Override
@@ -389,9 +399,9 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
             mPitch = (int) (mAttitude[1] * RAD2DEG);
             mRoll = (int) (mAttitude[2] * RAD2DEG);
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("Azi : " + mAzimuth + ", Pitch : " + mPitch + " , Roll : " + mRoll);
-            Log.d(TAG, sb.toString());
+//            StringBuilder sb = new StringBuilder();
+//            sb.append("Azi : " + mAzimuth + ", Pitch : " + mPitch + " , Roll : " + mRoll);
+//            Log.d(TAG, sb.toString());
 
             if (mEnableMagicAction) {
                 if (mPitch < -80) {

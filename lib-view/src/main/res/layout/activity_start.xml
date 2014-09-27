@@ -1,0 +1,43 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/start_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".StartActivity">
+
+    <TextView
+        android:id="@+id/start_text"
+        android:text="@string/start_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@+id/start_rg_mode"
+        android:layout_marginBottom="16dp"/>
+
+    <RadioGroup
+        android:id="@+id/start_rg_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:checkedButton="@+id/start_radio_normal">
+
+        <RadioButton
+            android:id="@+id/start_radio_normal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:button="@drawable/select_radio"
+            android:textColor="#000"
+            android:text="Normal Mode"/>
+
+        <RadioButton
+            android:id="@+id/start_radio_training"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:button="@drawable/select_radio"
+            android:textColor="#000"
+            android:text="Training Mode"/>
+
+    </RadioGroup>
+
+</RelativeLayout>

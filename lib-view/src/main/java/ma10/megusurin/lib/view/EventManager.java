@@ -9,6 +9,7 @@ import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class EventManager extends Fragment {
 
@@ -68,7 +69,7 @@ public class EventManager extends Fragment {
 
     private EnemyViewFragment mEnemyView;
 
-    private boolean mAttackMode = false;
+    private boolean mTrainingMode = false;
 
     private Handler mHandler;
 
@@ -90,6 +91,16 @@ public class EventManager extends Fragment {
         }
     }
 
+    public static EventManager newInstance(final boolean trainingMode) {
+        EventManager eventManager = new EventManager();
+
+        Bundle args = new Bundle();
+        args.putBoolean("mode_training", trainingMode);
+        eventManager.setArguments(args);
+
+        return eventManager;
+    }
+
     private int mMagicCount;
 
     private int mCurrentEventId;
@@ -99,6 +110,10 @@ public class EventManager extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            mTrainingMode = getArguments().getBoolean("mode_training", false);
+        }
 
         mHandler = new Handler();
     }
@@ -147,8 +162,10 @@ public class EventManager extends Fragment {
                         case MagicViewFragment.EVENT_FINISH_MAGIC:
                             mEventListener.removeTargetFragment(TAG_MAGIC_VIEW);
 
-                            if (mAttackMode) {
-                                dispatchNextEvent();
+                            if (mTrainingMode) {
+                                Random random = new Random();
+                                mEnemyAttackAble = random.nextBoolean();
+                                onFinishedEvent();
                                 break;
                             }
 
@@ -308,12 +325,14 @@ public class EventManager extends Fragment {
             mEventListener.addTargetFragment(mMessageView, R.id.message_view_holder, TAG_MESSAGE_VIEW, false);
             registerEventListener(mMessageView);
 
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    onFinishedEvent();
-                }
-            }, 500);
+            if (!mTrainingMode) {
+                mHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        onFinishedEvent();
+                    }
+                }, 500);
+            }
         }
     }
 

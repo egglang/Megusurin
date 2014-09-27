@@ -26,9 +26,13 @@ import ma10.megusurin.lib.web.YodaAPIAccesser;
 public class MegusurinActivity extends Activity
         implements EventManager.EventManagerListener, SensorEventListener {
 
+    public static final String KEY_MODE_TRAINING = "mode_training";
+
     private static final String TAG = MegusurinActivity.class.getSimpleName();
 
     private static final String EVENT_FRAGMENT_TAG = "EVENT_MG";
+
+    private boolean mTrainingMode;
 
     private ViewGroup mBackGround;
 
@@ -53,6 +57,10 @@ public class MegusurinActivity extends Activity
         SensorControl sensorControl = new SensorControl(this);
         sensorControl.setMode(SensorControl.SENSOR_MODE_HEADSET);
 
+        if (getIntent() != null) {
+            mTrainingMode = getIntent().getBooleanExtra(KEY_MODE_TRAINING, false);
+        }
+
         setupEventManager();
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -60,7 +68,7 @@ public class MegusurinActivity extends Activity
     }
 
     private void setupEventManager() {
-        mEventManager = new EventManager();
+        mEventManager = EventManager.newInstance(mTrainingMode);
 
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();

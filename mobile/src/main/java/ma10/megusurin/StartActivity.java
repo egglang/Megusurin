@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.RadioGroup;
 
 import ma10.megusurin.lib.web.MegusurinEventChecker;
 
@@ -16,6 +17,8 @@ public class StartActivity extends Activity implements MegusurinEventChecker.IMe
     private Handler mHandler;
 
     private MegusurinEventChecker mEventChecker;
+
+    private RadioGroup mRGMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +35,8 @@ public class StartActivity extends Activity implements MegusurinEventChecker.IMe
 
 
         root.setBackgroundResource(R.drawable.megusurin);
+
+        mRGMode = (RadioGroup) findViewById(R.id.start_rg_mode);
 
         mHandler = new Handler();
 
@@ -58,8 +63,12 @@ public class StartActivity extends Activity implements MegusurinEventChecker.IMe
 
     private void startMainActivity() {
         Intent intent = new Intent(this, MegusurinActivity.class);
+        if (mRGMode.getCheckedRadioButtonId() == ma10.megusurin.lib.view.R.id.start_radio_training) {
+            intent.putExtra(MegusurinActivity.KEY_MODE_TRAINING, true);
+        }
         startActivity(intent);
-        overridePendingTransition(R.anim.scale_in, R.anim.scale_out);
+
+        overridePendingTransition(ma10.megusurin.lib.view.R.anim.scale_in, ma10.megusurin.lib.view.R.anim.scale_out);
 
         this.finish();
     }
