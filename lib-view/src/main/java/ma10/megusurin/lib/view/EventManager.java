@@ -20,6 +20,10 @@ public class EventManager extends Fragment {
         void removeTargetFragment(String tag);
 
         Fragment getTargetFragment(String tag);
+
+        void onWaitMagic();
+
+        void onPendingMagic();
     }
 
     private EventManagerListener mEventListener;
@@ -235,7 +239,9 @@ public class EventManager extends Fragment {
 
                         case MessageViewFragment.EVENT_DAMAGED:
                             showCureMagicWaitMessage();
-                            doCureMagicEvent();
+//                            doCureMagicEvent();
+                            mCurrentEventId = EVENT_WAIT_MAGIC;
+                            dispatchNextEvent();
                             break;
                     }
                     break;
@@ -284,6 +290,10 @@ public class EventManager extends Fragment {
     }
 
     private void dispatchNextEvent() {
+        if ((mEventListener != null) && (mCurrentEventId == EVENT_WAIT_MAGIC)) {
+            mEventListener.onWaitMagic();
+        }
+
         for (IEventListener listener : mListenerList) {
             listener.doEvent(mCurrentEventId);
         }
@@ -339,9 +349,23 @@ public class EventManager extends Fragment {
         MagicViewFragment f = MagicViewFragment.newInstance(magicType, true);
         f.setTargetFragment(this, REQUEST_MAGIC);
         mEventListener.addTargetFragment(f, R.id.magic_view_holder, TAG_MAGIC_VIEW,false);
+
+        if (mEventListener != null) {
+            mEventListener.onPendingMagic();
+        }
     }
 
     public void doCureMagicEvent() {
+        if (mEventListener.getTargetFragment(TAG_MAGIC_VIEW) != null) {
+            Log.d(TAG, "Magic is already doing.");
+            return;
+        }
+
+        if (mCurrentEventId != EVENT_WAIT_MAGIC) {
+            Log.d(TAG, "Current event can not accept magic command.");
+            return;
+        }
+
         mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -349,7 +373,7 @@ public class EventManager extends Fragment {
                 f.setTargetFragment(EventManager.this, REQUEST_MAGIC);
                 mEventListener.addTargetFragment(f, R.id.magic_view_holder, TAG_MAGIC_VIEW, false);
             }
-        }, 3000);
+        }, 500);
     }
 
     private void doSpecialMagicEvent() {

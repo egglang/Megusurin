@@ -3,8 +3,13 @@ package ma10.megusurin;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -29,6 +34,7 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 import ma10.megusurin.lib.view.EventManager;
 import ma10.megusurin.lib.view.MagicViewFragment;
@@ -38,7 +44,8 @@ import ma10.megusurin.lib.web.MegusurinEventChecker;
 public class MegusurinActivity extends Activity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
         NodeApi.NodeListener, EventManager.EventManagerListener,
-        MegusurinEventChecker.IMegusurinEventListener {
+        MegusurinEventChecker.IMegusurinEventListener,
+        SensorEventListener {
 
     public static final String INTENT_KEY_MODE = "mode";
     public static final int MODE_NORMAL = 0;
@@ -73,6 +80,10 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
     private MegusurinEventChecker mEventChecker;
 
+    private SensorManager mSensorManager;
+
+    private boolean mEnableMagicAction = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -102,6 +113,8 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
         mEventChecker = new MegusurinEventChecker(this);
 
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
         setupEventManager();
     }
 
@@ -119,6 +132,17 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         super.onResume();
         mGoogleApiClient.connect();
         mEventChecker.startEventCheck();
+
+        List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+
+        for (Sensor sensor : sensors) {
+            if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                mSensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
+            }
+            else if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                mSensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
+            }
+        }
     }
 
     @Override
@@ -129,6 +153,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
             stopWearApp();
             mEventChecker.stopEventCheck();
         }
+        mSensorManager.unregisterListener(this);
     }
 
     @Override
@@ -242,6 +267,16 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
         return targetFragment;
     }
 
+    @Override
+    public void onWaitMagic() {
+        mEnableMagicAction = true;
+    }
+
+    @Override
+    public void onPendingMagic() {
+        mEnableMagicAction = false;
+    }
+
     private void addWearListener() {
         Wearable.DataApi.addListener(mGoogleApiClient, this);
         Wearable.MessageApi.addListener(mGoogleApiClient, this);
@@ -317,6 +352,58 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     @Override
     public void onBattlePrepared() {
 //        startBattleEvent(mEnemyType);
+    }
+
+    private static final double RAD2DEG = 180/Math.PI;
+
+    float[] mRotationMatrix = new float[9];
+    float[] mGravity = new float[3];
+    float[] mGeomagnetic = new float[3];
+    float[] mAttitude = new float[3];
+
+    int mAzimuth;
+    int mPitch;
+    int mRoll;
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            mGeomagnetic = sensorEvent.values.clone();
+        }
+        else if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            mGravity = sensorEvent.values.clone();
+        }
+
+        if ((mGeomagnetic != null) && (mGravity != null)) {
+            SensorManager.getRotationMatrix(
+                    mRotationMatrix,
+                    null,
+                    mGravity,
+                    mGeomagnetic);
+
+            SensorManager.getOrientation(
+                    mRotationMatrix,
+                    mAttitude);
+
+            mAzimuth = (int) (mAttitude[0] * RAD2DEG);
+            mPitch = (int) (mAttitude[1] * RAD2DEG);
+            mRoll = (int) (mAttitude[2] * RAD2DEG);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("Azi : " + mAzimuth + ", Pitch : " + mPitch + " , Roll : " + mRoll);
+            Log.d(TAG, sb.toString());
+
+            if (mEnableMagicAction) {
+                if (mPitch < -80) {
+                    Log.d(TAG, "目薬 ｷﾀ━━━━(ﾟ∀ﾟ)━━━━!!");
+                    mEventManager.doMagicEvent(MagicViewFragment.MAGIC_TYPE_CURE);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
     private class Task extends AsyncTask<Void, Void, Void> {

@@ -4,17 +4,27 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 
+import java.util.List;
+
+import jp.epson.moverio.bt200.SensorControl;
 import ma10.megusurin.lib.view.EventManager;
+import ma10.megusurin.lib.view.MagicViewFragment;
 import ma10.megusurin.lib.web.YodaAPIAccesser;
 
 public class MegusurinActivity extends Activity
-        implements EventManager.EventManagerListener {
+        implements EventManager.EventManagerListener, SensorEventListener {
 
     private static final String TAG = MegusurinActivity.class.getSimpleName();
 
@@ -23,6 +33,10 @@ public class MegusurinActivity extends Activity
     private ViewGroup mBackGround;
 
     private EventManager mEventManager;
+
+    private SensorManager mSensorManager;
+
+    private boolean mEnableMagicAction = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +49,14 @@ public class MegusurinActivity extends Activity
 
         setContentView(R.layout.activity_megusurin);
 
+        // Change to sensor of handset
+        SensorControl sensorControl = new SensorControl(this);
+        sensorControl.setMode(SensorControl.SENSOR_MODE_HEADSET);
+
         setupEventManager();
+
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
     }
 
     private void setupEventManager() {
@@ -47,6 +68,28 @@ public class MegusurinActivity extends Activity
         ft.commit();
 
         new EncountCheckTask().execute();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        List<Sensor> sensors = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+
+        for (Sensor sensor : sensors) {
+            if (sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                mSensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
+            }
+            else if (sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                mSensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
+            }
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mSensorManager.unregisterListener(this);
     }
 
     @Override
@@ -80,7 +123,71 @@ public class MegusurinActivity extends Activity
         return targetFragment;
     }
 
+    @Override
+    public void onWaitMagic() {
+        Log.d(TAG, "onWaitMagic()");
+        mEnableMagicAction = true;
+    }
+
+    @Override
+    public void onPendingMagic() {
+        Log.d(TAG, "onPendingMagic()");
+        mEnableMagicAction = false;
+    }
+
     private boolean mPollingFlag = true;
+
+    private static final double RAD2DEG = 180/Math.PI;
+
+    float[] mRotationMatrix = new float[9];
+    float[] mGravity = new float[3];
+    float[] mGeomagnetic = new float[3];
+    float[] mAttitude = new float[3];
+
+    int mAzimuth;
+    int mPitch;
+    int mRoll;
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            mGeomagnetic = sensorEvent.values.clone();
+        }
+        else if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            mGravity = sensorEvent.values.clone();
+        }
+
+        if ((mGeomagnetic != null) && (mGravity != null)) {
+            SensorManager.getRotationMatrix(
+                    mRotationMatrix,
+                    null,
+                    mGravity,
+                    mGeomagnetic);
+
+            SensorManager.getOrientation(
+                    mRotationMatrix,
+                    mAttitude);
+
+            mAzimuth = (int) (mAttitude[0] * RAD2DEG);
+            mPitch = (int) (mAttitude[1] * RAD2DEG);
+            mRoll = (int) (mAttitude[2] * RAD2DEG);
+
+//            StringBuilder sb = new StringBuilder();
+//            sb.append("Azi : " + mAzimuth + ", Pitch : " + mPitch + " , Roll : " + mRoll);
+//            Log.d(TAG, sb.toString());
+
+            if (mEnableMagicAction) {
+                if ((mPitch > -40) && (mPitch < 15)) {
+                    Log.d(TAG, "目薬 ｷﾀ━━━━(ﾟ∀ﾟ)━━━━!!");
+                    mEventManager.doMagicEvent(MagicViewFragment.MAGIC_TYPE_CURE);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor mSensor, int i) {
+    }
 
     private class EncountCheckTask extends AsyncTask<Void, Void, Boolean> {
 
@@ -94,7 +201,7 @@ public class MegusurinActivity extends Activity
                 occured = yodaAccesser.isOccurEncount();
 
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -130,10 +237,12 @@ public class MegusurinActivity extends Activity
             int magicType = -1;
 
             while ((magicType == -1) && mPollingFlag) {
-                magicType = yodaAPIAccesser.getMagicType();
+                if (mEnableMagicAction) {
+                    magicType = yodaAPIAccesser.getMagicType();
+                }
 
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
