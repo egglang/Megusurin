@@ -5,13 +5,13 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.support.wearable.view.DelayedConfirmationView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -46,8 +46,6 @@ public class ChargeActivity extends Activity
 
     private GoogleApiClient mGoogleApiClient;
 
-    private Handler mHandler;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,10 +54,10 @@ public class ChargeActivity extends Activity
 
         setContentView(R.layout.activity_charge);
 
-        mDelayedConfirmationView = (DelayedConfirmationView) findViewById(R.id.delayed_confirmation);
+        mDelayedConfirmationView = (DelayedConfirmationView) findViewById(R.id.chage_confirmation);
         mDelayedConfirmationView.setTotalTimeMs(5000);
 
-        mViewRoot = (ViewGroup) findViewById(R.id.delayed_view_root);
+        mViewRoot = (ViewGroup) findViewById(R.id.charge_view_root);
         mViewRoot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -70,7 +68,7 @@ public class ChargeActivity extends Activity
             }
         });
 
-        mHandler = new Handler();
+        mTextView = (TextView) findViewById(R.id.charge_text);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
@@ -101,10 +99,13 @@ public class ChargeActivity extends Activity
     protected void onResume() {
         super.onResume();
         mGoogleApiClient.connect();
+
+        vibrate();
     }
 
     @Override
     protected void onPause() {
+        Log.d(TAG, "onPause");
         super.onPause();
         Wearable.DataApi.removeListener(mGoogleApiClient, this);
         Wearable.MessageApi.removeListener(mGoogleApiClient, this);
@@ -126,26 +127,18 @@ public class ChargeActivity extends Activity
     public void onMessageReceived(final MessageEvent event) {
         Log.d(TAG, "onMessageReceived: " + event);
 
-//        String path = event.getPath();
-//        if (path.equals(PATH_SET_PARKING)) {
-//            Log.d(TAG, "Set Parking!: " + event);
-
-//            mHandler.postDelayed(new Runnable() {
-//                @Override
-//                public void run() {
-//                    mDelayedConfirmationView.start();
-//                    mDelayedConfirmationView.setListener(ChargeActivity.this);
-//                }
-//            }, 500);
-
-//            runOnUiThread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    mDelayedConfirmationView.start();
-//                    mDelayedConfirmationView.setListener(ChargeActivity.this);
-//                }
-//            });
-//        }
+        String path = event.getPath();
+        if (path.equals(PATH_SET_PARKING)) {
+            Log.d(TAG, "Set Parking!: " + event);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mTextView.setText(R.string.charge_text_charge);
+                    mDelayedConfirmationView.start();
+                    mDelayedConfirmationView.setListener(ChargeActivity.this);
+                }
+            });
+        }
     }
 
     @Override
@@ -215,9 +208,15 @@ public class ChargeActivity extends Activity
         }
     }
 
+    private void vibrate() {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        long[] pattern = {500, 500, 500, 500, 500, 500};
+        vibrator.vibrate(pattern, -1);
+    }
+
     private void startBattleActivity() {
         Intent intent = new Intent(this, WearActivity.class);
-//        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         this.finish();
     }

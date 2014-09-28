@@ -7,12 +7,12 @@
     android:background="#FFF">
 
     <FrameLayout
-        android:id="@+id/delayed_view_root"
+        android:id="@+id/charge_view_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <android.support.wearable.view.DelayedConfirmationView
-            android:id="@+id/delayed_confirmation"
+            android:id="@+id/chage_confirmation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -25,13 +25,14 @@
             app:circle_border_color="#8EE1E0"/>
 
         <TextView
+            android:id="@+id/charge_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|bottom"
-            android:text="敵を発見！ \nタップしてチャージ！"
+            android:text="Put on the Parking Brake!"
             android:layout_marginBottom="20dp"
             android:textColor="#000"
-            android:textSize="14sp"/>
+            android:textSize="18sp"/>
 
     </FrameLayout>
 

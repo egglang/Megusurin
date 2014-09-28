@@ -27,6 +27,9 @@ public class MessageReceiveService extends WearableListenerService {
             intent = new Intent(this, ChargeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
-        startActivity(intent);
+
+        if (intent != null) {
+            startActivity(intent);
+        }
     }
 }

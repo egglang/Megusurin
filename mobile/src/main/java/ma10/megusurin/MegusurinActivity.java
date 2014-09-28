@@ -356,12 +356,13 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 
     @Override
     public void onWaitBattlePrepare() {
-        dispatchBattleEvent();
+        EventNotify.cancelBattleEventNotify(this);
+        startChargeDialog();
     }
 
     @Override
     public void onBattlePrepared() {
-//        startBattleEvent(mEnemyType);
+        startBattleCharge();
     }
 
     private static final double RAD2DEG = 180/Math.PI;
@@ -444,10 +445,6 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
     private int mEnemyType;
 
     private boolean mOccuredEncountEvnet = false;
-
-    private void dispatchBattleEvent() {
-        startChargeDialog();
-    }
 
     @Override
     protected void onNewIntent(Intent intent) {
