@@ -97,6 +97,7 @@ public class ChargeActivity extends Activity
 
     @Override
     protected void onResume() {
+        Log.d(TAG, "onResume");
         super.onResume();
         mGoogleApiClient.connect();
 
