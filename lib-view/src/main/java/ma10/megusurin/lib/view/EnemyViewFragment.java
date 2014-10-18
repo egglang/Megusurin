@@ -239,30 +239,18 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
     private final Runnable mDiedEffect = new Runnable() {
         @Override
         public void run() {
-            TranslateAnimation transAnim1 = new TranslateAnimation(0, 10, 0, 0);
-            transAnim1.setDuration(100);
-            transAnim1.setRepeatCount(30);
 
-            TranslateAnimation transAnim2 = new TranslateAnimation(0, 0, 0, mImageEnemy.getHeight());
-            transAnim2.setDuration(3000);
-
-            AlphaAnimation alphaAnimation = new AlphaAnimation(1.0f, 0.0f);
-            alphaAnimation.setDuration(3000);
-
-            AnimationSet animationSet = new AnimationSet(false);
-            animationSet.addAnimation(transAnim1);
-            animationSet.addAnimation(transAnim2);
-            animationSet.addAnimation(alphaAnimation);
-            animationSet.setAnimationListener(new Animation.AnimationListener() {
+            AlphaAnimation alphaAnimation = new AlphaAnimation(0.5f, 1.0f);
+            alphaAnimation.setDuration(1000);
+            alphaAnimation.setFillAfter(true);
+            alphaAnimation.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
-                    mImageEnemy.setImageResource(R.drawable.enemy3);
-                    mImageEnemy.setAlpha(1.0f);
                 }
 
                 @Override
                 public void onAnimationEnd(Animation animation) {
-                    mImageEnemy.setAlpha(0.0f);
+                    mImageEnemy.setImageResource(R.drawable.enemy3);
                     dispatchEnemyViewEventFinish(EVENT_DIED);
                 }
 
@@ -270,8 +258,7 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
                 public void onAnimationRepeat(Animation animation) {
                 }
             });
-
-            mImageEnemy.startAnimation(animationSet);
+            mImageEnemy.startAnimation(alphaAnimation);
         }
     };
 

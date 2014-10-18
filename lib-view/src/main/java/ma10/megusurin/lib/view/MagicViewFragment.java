@@ -341,11 +341,30 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
 
     private int mSpecialEffectIndex = 0;
 
+    private static final int[] SPECIAL_EFFECT_LIST = {
+            R.drawable.hokaku_1,
+            R.drawable.hokaku_2,
+            R.drawable.hokaku_3,
+            R.drawable.hokaku_10,
+            R.drawable.hokaku_11,
+            R.drawable.hokaku_12,
+            R.drawable.hokaku_13,
+            R.drawable.hokaku_14,
+            R.drawable.hokaku_15,
+            R.drawable.hokaku_16,
+            R.drawable.hokaku_17,
+            R.drawable.hokaku_18,
+            R.drawable.hokaku_19,
+            R.drawable.hokaku_20,
+            R.drawable.hokaku_21,
+            R.drawable.hokaku_22,
+    };
+
     private Runnable mSpecialMagicEffect = new Runnable() {
         @Override
         public void run() {
-            if (mSpecialEffectIndex < 3) {
-                mHandler.postDelayed(mSpecialMagicEffect, 1000);
+            if (mSpecialEffectIndex < (SPECIAL_EFFECT_LIST.length - 1)) {
+                mHandler.postDelayed(mSpecialMagicEffect, 125);
             } else {
                 mHandler.postDelayed(new Runnable() {
                     @Override
@@ -358,20 +377,7 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-
-                    int resId = 0;
-                    switch (mSpecialEffectIndex) {
-                        case 0:
-                            resId = R.drawable.hokaku_1;
-                            break;
-                        case 1:
-                            resId = R.drawable.hokaku_2;
-                            break;
-                        case 2:
-                            resId = R.drawable.hokaku_3;
-                            break;
-                    }
-
+                    int resId = SPECIAL_EFFECT_LIST[mSpecialEffectIndex];
                     mMagicImage.setImageResource(resId);
                     mSpecialEffectIndex++;
                 }
