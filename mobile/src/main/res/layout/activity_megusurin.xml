@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:textOff="@string/preview_off"
         android:textOn="@string/preview_on"
-        android:layout_gravity="top|right"/>
+        android:layout_gravity="bottom|right"/>
 
     <FrameLayout
         android:id="@id/enemy_view_holder"

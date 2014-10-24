@@ -14,6 +14,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 
@@ -61,11 +62,9 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
 
     private TextView mTextHp;
 
-    private TextView mTextLv;
-
-    private ImageView mImageChar;
-
     private TextView mTextMessage;
+
+    private ProgressBar mProgressHp;
 
     private int mHp;
 
@@ -77,14 +76,11 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
 
         mViewRoot = (ViewGroup) v.findViewById(R.id.message_root);
 
-        mImageChar = (ImageView) v.findViewById(R.id.message_image_char);
-        mImageChar.setImageResource(R.drawable.status_face);
-
         mTextHp = (TextView) v.findViewById(R.id.message_text_hp);
         mTextHp.setText(String.valueOf(MAX_HITPOINT));
 
-        mTextLv = (TextView) v.findViewById(R.id.message_text_lv);
-        mTextLv.setText(String.valueOf(LV));
+        mProgressHp = (ProgressBar) v.findViewById(R.id.message_progress_hp);
+        mProgressHp.setMax(MAX_HITPOINT);
 
         mTextMessage = (TextView) v.findViewById(R.id.message_text_msg);
 
@@ -138,6 +134,7 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
                 @Override
                 public void run() {
                     mTextHp.setText(newHP);
+                    mProgressHp.setProgress(mHp);
                 }
             });
         }
@@ -168,6 +165,7 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
                 @Override
                 public void run() {
                     mTextHp.setText(newHP);
+                    mProgressHp.setProgress(mHp);
                 }
             });
         }
@@ -223,7 +221,7 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
 
                     @Override
                     public void onAnimationEnd(Animation animation) {
-                        mTextMessage.setBackgroundResource(R.drawable.msg_meg_70);
+                        mTextMessage.setBackgroundResource(R.drawable.msg_meg_30);
 
                         AnimationSet animationSet1 = new AnimationSet(false);
 
@@ -256,7 +254,7 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
         mHandler.post(new Runnable() {
             @Override
             public void run() {
-                mTextMessage.setBackgroundResource(R.drawable.msg_drive_70);
+                mTextMessage.setBackgroundResource(R.drawable.msg_drive_30);
             }
         });
     }
