@@ -9,9 +9,10 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
+import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -86,6 +87,8 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
 
     private TextView mTextEnemyName;
 
+    private ImageView mImageEnemyAttack;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -95,6 +98,8 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
         mImageEnemy = (ImageView) v.findViewById(R.id.enemy_image);
 
         mTextEnemyName = (TextView) v.findViewById(R.id.enemy_text_name);
+
+        mImageEnemyAttack = (ImageView) v.findViewById(R.id.enemy_image_attack);
 
         setupEnemy();
 
@@ -134,32 +139,7 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
     }
 
     public void onEnemyAttack() {
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                TranslateAnimation translateAnimation = new TranslateAnimation(0, 0, 20, 0);
-                translateAnimation.setDuration(200);
-                translateAnimation.setRepeatCount(2);
-                translateAnimation.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-                        dispatchEnemyViewEventFinish(EVENT_PREPAREATTACK);
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        dispatchEnemyViewEventFinish(EVENT_ATTACKED);
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-
-                    }
-                });
-
-                mImageEnemy.startAnimation(translateAnimation);
-            }
-        }, 1000);
+        mHandler.postDelayed(mEnemyAttackEffect, 1000);
     }
 
     private void showDamagedEffect() {
@@ -261,6 +241,63 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
             mImageEnemy.startAnimation(alphaAnimation);
         }
     };
+
+    private final Runnable mEnemyAttackEffect = new Runnable() {
+        @Override
+        public void run() {
+            showEnemyAttackMotion();
+        }
+    };
+
+    private void showEnemyAttackMotion() {
+        TranslateAnimation translateAnimation = new TranslateAnimation(0, 0, 20, 0);
+        translateAnimation.setDuration(200);
+        translateAnimation.setRepeatCount(2);
+        translateAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                dispatchEnemyViewEventFinish(EVENT_PREPAREATTACK);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                showEnemyAttackEffect();
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+
+        mImageEnemy.startAnimation(translateAnimation);
+    }
+
+    private void showEnemyAttackEffect() {
+        ScaleAnimation scaleAnimation = new ScaleAnimation(0.05f, 2.0f, 0.05f, 2.0f,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f);
+        scaleAnimation.setDuration(750);
+        scaleAnimation.setInterpolator(new AccelerateDecelerateInterpolator());
+        scaleAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                mImageEnemyAttack.setImageResource(R.drawable.kougeki_1);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                mImageEnemyAttack.setImageBitmap(null);
+                dispatchEnemyViewEventFinish(EVENT_ATTACKED);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+            }
+        });
+
+        mImageEnemyAttack.startAnimation(scaleAnimation);
+    }
 
     @Override
     public void doEvent(int eventId) {

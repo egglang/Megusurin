@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
@@ -33,6 +34,8 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
     private static final int MAX_HITPOINT = 387;
 
     private static final int MIN_HITPOINT = 76;
+
+    private static  final int MAX_DAMAGE_ALPHA = 128;
 
     private static final int LV = 32;
 
@@ -66,6 +69,8 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
 
     private ProgressBar mProgressHp;
 
+    private ImageView mDamageEffectView;
+
     private int mHp;
 
     @Override
@@ -83,6 +88,8 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
         mProgressHp.setMax(MAX_HITPOINT);
 
         mTextMessage = (TextView) v.findViewById(R.id.message_text_msg);
+
+        mDamageEffectView = (ImageView) v.findViewById(R.id.message_damage_view);
 
         return v;
     }
@@ -111,6 +118,7 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
         });
 
         mViewRoot.startAnimation(translateAnimation);
+        mDamageEffectView.setAlpha((float) MAX_DAMAGE_ALPHA / 255f);
     }
 
     private Runnable mDecrimentHitPoint = new Runnable() {
@@ -141,7 +149,32 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
     };
 
     private void showCuredEffect() {
-        mHandler.post(mIncremintHitPoint);
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                float currentAlpha = mDamageEffectView.getAlpha();
+                AlphaAnimation alphaAnimation = new AlphaAnimation(currentAlpha, 0.0f);
+                alphaAnimation.setDuration(1500);
+                alphaAnimation.setInterpolator(new AccelerateInterpolator(2.0f));
+                alphaAnimation.setAnimationListener(new Animation.AnimationListener() {
+                    @Override
+                    public void onAnimationStart(Animation animation) {
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animation animation) {
+                        mDamageEffectView.setAlpha(0.0f);
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animation animation) {
+                    }
+                });
+                mDamageEffectView.startAnimation(alphaAnimation);
+            }
+        });
+
+        mHandler.postDelayed(mIncremintHitPoint, 100);
     }
 
     private Runnable mIncremintHitPoint = new Runnable() {
