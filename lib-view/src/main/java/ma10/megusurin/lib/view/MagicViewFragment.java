@@ -298,8 +298,8 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
     private Runnable mCureEffect = new Runnable() {
         @Override
         public void run() {
-            if (mCureEffectIndex < 6) {
-                mHandler.postDelayed(mCureEffect, 750);
+            if (mCureEffectIndex < 7) {
+                mHandler.postDelayed(mCureEffect, 250);
             } else {
                 mHandler.postDelayed(new Runnable() {
                     @Override
@@ -329,6 +329,9 @@ public class MagicViewFragment extends Fragment implements EventManager.IEventLi
                             break;
                         case 4:
                             resId = R.drawable.kaihuku_5;
+                            break;
+                        case 5:
+                            resId = R.drawable.kaihuku_6;
                             break;
                     }
 
