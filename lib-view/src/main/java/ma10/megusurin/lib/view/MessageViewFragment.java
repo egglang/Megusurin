@@ -35,7 +35,7 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
 
     private static final int MIN_HITPOINT = 76;
 
-    private static  final int MAX_DAMAGE_ALPHA = 128;
+    private static  final int MAX_DAMAGE_ALPHA = 160;
 
     private static final int LV = 32;
 
@@ -149,32 +149,34 @@ public class MessageViewFragment extends Fragment implements EventManager.IEvent
     };
 
     private void showCuredEffect() {
-        mHandler.post(new Runnable() {
+        TranslateAnimation translateAnimation = new TranslateAnimation(0, 0, 0, 2000);
+        translateAnimation.setDuration(1500);
+
+        float currentAlpha = (float) MAX_DAMAGE_ALPHA / 255f;
+        AlphaAnimation alphaAnimation = new AlphaAnimation(currentAlpha, 0.0f);
+        alphaAnimation.setDuration(1500);
+
+        AnimationSet animationSet = new AnimationSet(false);
+        animationSet.addAnimation(translateAnimation);
+        animationSet.addAnimation(alphaAnimation);
+        animationSet.setAnimationListener(new Animation.AnimationListener() {
             @Override
-            public void run() {
-                float currentAlpha = mDamageEffectView.getAlpha();
-                AlphaAnimation alphaAnimation = new AlphaAnimation(currentAlpha, 0.0f);
-                alphaAnimation.setDuration(1500);
-                alphaAnimation.setInterpolator(new AccelerateInterpolator(2.0f));
-                alphaAnimation.setAnimationListener(new Animation.AnimationListener() {
-                    @Override
-                    public void onAnimationStart(Animation animation) {
-                    }
+            public void onAnimationStart(Animation animation) {
+            }
 
-                    @Override
-                    public void onAnimationEnd(Animation animation) {
-                        mDamageEffectView.setAlpha(0.0f);
-                    }
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                mDamageEffectView.setAlpha(0.0f);
+                mHandler.postDelayed(mIncremintHitPoint, 0);
+            }
 
-                    @Override
-                    public void onAnimationRepeat(Animation animation) {
-                    }
-                });
-                mDamageEffectView.startAnimation(alphaAnimation);
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
             }
         });
 
-        mHandler.postDelayed(mIncremintHitPoint, 100);
+        mDamageEffectView.startAnimation(animationSet);
     }
 
     private Runnable mIncremintHitPoint = new Runnable() {
