@@ -39,7 +39,7 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
     private static final int INDEX_THUNDER = 1;
     private static final int INDEX_ICE = 2;
     private static final int INDEX_VOICE = 3;
-    private static final String TAG = "Megusurin";
+    private static final String TAG = WearActivity.class.getSimpleName();
     private static final String PATH_FIRE = "/fire";
     private static final String PATH_THUNDER = "/thunder";
     private static final String PATH_ICE = "/ice";
@@ -79,16 +79,19 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume");
         mGoogleApiClient.connect();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d(TAG, "onPause");
         Wearable.DataApi.removeListener(mGoogleApiClient, this);
         Wearable.MessageApi.removeListener(mGoogleApiClient, this);
         Wearable.NodeApi.removeListener(mGoogleApiClient, this);
         mGoogleApiClient.disconnect();
+        finish();
     }
 
     @Override

@@ -43,9 +43,20 @@ public class MessageReceiveService extends WearableListenerService {
             if (!mWakeLock.isHeld()) {
                 mWakeLock.acquire();
             }
+            // すぐに起動するとアンビエントがまだ解除されておらず画面が出ないことがあるようなので少し待つ
+            doNothingAWhile();
             startActivity(intent);
 
             mWakeLock.release();
         }
+    }
+
+    private void doNothingAWhile() {
+        try {
+            Thread.sleep(300);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }

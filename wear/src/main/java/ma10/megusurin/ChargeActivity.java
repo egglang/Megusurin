@@ -4,13 +4,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.PowerManager;
 import android.os.Vibrator;
 import android.support.wearable.view.DelayedConfirmationView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -31,7 +30,7 @@ public class ChargeActivity extends Activity
         implements DelayedConfirmationView.DelayedConfirmationListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, DataApi.DataListener, MessageApi.MessageListener,
-        NodeApi.NodeListener{
+        NodeApi.NodeListener {
 
     private static final String PATH_SET_PARKING = "/set_parking";
     private static final String PATH_START_BATTLE = "/start_battle";
@@ -46,11 +45,14 @@ public class ChargeActivity extends Activity
 
     private GoogleApiClient mGoogleApiClient;
 
+    private PowerManager.WakeLock mWakeLock;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        mWakeLock = powerManager.newWakeLock((PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP), "ChargeActivityWakelockTag");
+        mWakeLock.acquire();
 
         setContentView(R.layout.activity_charge);
 
@@ -115,6 +117,14 @@ public class ChargeActivity extends Activity
     }
 
     @Override
+    protected void onDestroy() {
+        if (mWakeLock.isHeld()) {
+            mWakeLock.release();
+        }
+        super.onDestroy();
+    }
+
+    @Override
     public void onConnectionSuspended(int i) {
 
     }
@@ -157,7 +167,9 @@ public class ChargeActivity extends Activity
 
     }
 
-    public void startBattleEvent() {new Task(PATH_START_BATTLE).execute(); }
+    public void startBattleEvent() {
+        new Task(PATH_START_BATTLE).execute();
+    }
 
     private Collection<String> getNodes() {
         HashSet<String> results = new HashSet<String>();
@@ -189,9 +201,11 @@ public class ChargeActivity extends Activity
     private class Task extends AsyncTask<Void, Void, Void> {
 
         private final String path;
+
         private Task(String path) {
             this.path = path;
         }
+
         @Override
         protected Void doInBackground(Void... args) {
             Collection<String> nodes = getNodes();
