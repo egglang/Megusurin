@@ -118,7 +118,7 @@ public class EnemyViewFragment extends Fragment implements EventManager.IEventLi
         // TODO: check enemy type
         mImageEnemy.setImageResource(R.drawable.enemy1);
 
-        mEnemyName = "Enemy01";
+        mEnemyName = "ググルドラゴン";
         mTextEnemyName.setText(mEnemyName);
     }
 

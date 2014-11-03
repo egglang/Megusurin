@@ -170,8 +170,9 @@ public class EventManager extends Fragment {
                             mEventListener.removeTargetFragment(TAG_MAGIC_VIEW);
 
                             if (mTrainingMode) {
-                                Random random = new Random();
-                                mEnemyAttackAble = random.nextBoolean();
+//                                Random random = new Random();
+//                                mEnemyAttackAble = random.nextBoolean();
+                                mEnemyAttackAble = true;
                                 onFinishedEvent();
                                 break;
                             }
