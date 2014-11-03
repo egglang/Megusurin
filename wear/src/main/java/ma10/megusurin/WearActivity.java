@@ -300,7 +300,7 @@ public class WearActivity extends Activity implements GoogleApiClient.Connection
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            Toast.makeText(getApplicationContext(), "Generating RPC:" + path + " is called.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Magic spell is called.", Toast.LENGTH_SHORT).show();
         }
     }
 

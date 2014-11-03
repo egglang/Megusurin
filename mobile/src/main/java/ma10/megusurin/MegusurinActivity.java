@@ -405,7 +405,7 @@ public class MegusurinActivity extends Activity implements GoogleApiClient.Conne
 //            Log.d(TAG, sb.toString());
 
             if (mEnableMagicAction) {
-                if (mPitch < -80) {
+                if (mRoll < -140) {
                     Log.d(TAG, "目薬 ｷﾀ━━━━(ﾟ∀ﾟ)━━━━!!");
                     mEventManager.doMagicEvent(MagicViewFragment.MAGIC_TYPE_CURE);
                 }
