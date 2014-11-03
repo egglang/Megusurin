@@ -3,6 +3,7 @@ package ma10.megusurin.lib.view;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -138,6 +139,12 @@ public class EventManager extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        stopBattleMusic();
     }
 
     @Override
@@ -311,6 +318,13 @@ public class EventManager extends Fragment {
             mEventListener.onWaitMagic();
         }
 
+        if (mCurrentEventId == EVENT_ENCOUNTER_ENEMY) {
+            playBattleMusic();
+        }
+        else if (mCurrentEventId == EVENT_DIED_ENEMY) {
+            stopBattleMusic();
+        }
+
         for (IEventListener listener : mListenerList) {
             listener.doEvent(mCurrentEventId);
         }
@@ -404,6 +418,20 @@ public class EventManager extends Fragment {
                 mEventListener.addTargetFragment(f, R.id.magic_view_holder, TAG_MAGIC_VIEW, false);
             }
         }, 3000);
+    }
+
+    private MediaPlayer mMediaPlayer;
+
+    private void playBattleMusic() {
+        mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.ma10_bgm);
+        mMediaPlayer.setLooping(true);
+        mMediaPlayer.start();
+    }
+
+    private void stopBattleMusic() {
+        if ((mMediaPlayer != null) && (mMediaPlayer.isPlaying())) {
+            mMediaPlayer.stop();
+        }
     }
 
     private void showCureMagicWaitMessage() {
